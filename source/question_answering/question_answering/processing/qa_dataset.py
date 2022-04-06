@@ -1,10 +1,9 @@
+from datasets import Dataset as HF_Dataset
 from torch.utils.data import Dataset
-
-from .dataset_tokenizer import DatasetTokenizer
 
 
 class QADataset(Dataset):
-    def __init__(self, tokenized_datasets: DatasetTokenizer, type: str = None) -> None:
+    def __init__(self, tokenized_datasets: HF_Dataset, type: str = None) -> None:
         self.type = type
         if type:
             self.tokenized_dataset = tokenized_datasets[self.type]

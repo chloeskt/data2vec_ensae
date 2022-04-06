@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Union, Dict, List
 
-import datasets
+from datasets import Dataset
 from transformers import BatchEncoding
 
 CANINE_TOKENIZED_EXAMPLES = Dict[str, Union[List[List[int]], List[int]]]
@@ -12,6 +12,6 @@ class DatasetTokenizer(ABC):
         pass
 
     def tokenize(
-            self, data: datasets.arrow_dataset.Dataset
+        self, data: Dataset
     ) -> Union[BatchEncoding, CANINE_TOKENIZED_EXAMPLES]:
         raise NotImplementedError

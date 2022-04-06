@@ -1,11 +1,18 @@
-import datasets
+from datasets import Dataset
 from transformers import PreTrainedTokenizer, BatchEncoding
 
 from .dataset_tokenizer import DatasetTokenizer
 
 
-class Data2VecDatasetTokenizer(DatasetTokenizer):
-    def __init__(self, tokenizer: PreTrainedTokenizer, max_length: int, doc_stride: int, train: bool) -> None:
+# noinspection DuplicatedCode
+class DatasetTokenBasedTokenizer(DatasetTokenizer):
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizer,
+        max_length: int,
+        doc_stride: int,
+        train: bool,
+    ):
         super().__init__()
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -13,9 +20,7 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
         self.pad_on_right = tokenizer.padding_side == "right"
         self.train = train
 
-    def _tokenize_train_data(
-            self, data: datasets.arrow_dataset.Dataset
-    ) -> BatchEncoding:
+    def _tokenize_train_data(self, data: Dataset) -> BatchEncoding:
         # INSPIRED BY:
         # https://github.com/huggingface/transformers/blob/main/examples/pytorch/question-answering/run_qa.py
 
@@ -63,6 +68,7 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
             # One example can give several spans, this is the index of the example containing this span of text.
             sample_index = sample_mapping[i]
             answers = data[answer_column_name][sample_index]
+
             # If no answers are given, set the cls_index as answer.
             if len(answers["answer_start"]) == 0:
                 tokenized_examples["start_positions"].append(cls_index)
@@ -74,7 +80,9 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
 
                 # Start token index of the current span in the text.
                 token_start_index = 0
-                while sequence_ids[token_start_index] != (1 if self.pad_on_right else 0):
+                while sequence_ids[token_start_index] != (
+                    1 if self.pad_on_right else 0
+                ):
                     token_start_index += 1
 
                 # End token index of the current span in the text.
@@ -83,13 +91,19 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
                     token_end_index -= 1
 
                 # Detect if the answer is out of the span (in which case this feature is labeled with the CLS index).
-                if not (offsets[token_start_index][0] <= start_char and offsets[token_end_index][1] >= end_char):
+                if not (
+                    offsets[token_start_index][0] <= start_char
+                    and offsets[token_end_index][1] >= end_char
+                ):
                     tokenized_examples["start_positions"].append(cls_index)
                     tokenized_examples["end_positions"].append(cls_index)
                 else:
                     # Otherwise move the token_start_index and token_end_index to the two ends of the answer.
                     # Note: we could go after the last offset if the answer is the last word (edge case).
-                    while token_start_index < len(offsets) and offsets[token_start_index][0] <= start_char:
+                    while (
+                        token_start_index < len(offsets)
+                        and offsets[token_start_index][0] <= start_char
+                    ):
                         token_start_index += 1
                     tokenized_examples["start_positions"].append(token_start_index - 1)
                     while offsets[token_end_index][1] >= end_char:
@@ -98,9 +112,7 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
 
         return tokenized_examples
 
-    def _tokenize_val_data(
-            self, data: datasets.arrow_dataset.Dataset
-    ) -> BatchEncoding:
+    def _tokenize_val_data(self, data: Dataset) -> BatchEncoding:
         # INSPIRED BY:
         # https://github.com/huggingface/transformers/blob/main/examples/pytorch/question-answering/run_qa.py
 
@@ -123,10 +135,10 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
             stride=self.doc_stride,
             return_overflowing_tokens=True,
             return_offsets_mapping=True,
-            padding="max_length"
+            padding="max_length",
         )
 
-        # Since one example might give us se veral features if it has a long context, we need a map from a feature to
+        # Since one example might give us several features if it has a long context, we need a map from a feature to
         # its corresponding example. This key gives us just that.
         sample_mapping = tokenized_examples.pop("overflow_to_sample_mapping")
 
@@ -152,9 +164,7 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
 
         return tokenized_examples
 
-    def tokenize(
-            self, data: datasets.arrow_dataset.Dataset
-    ) -> BatchEncoding:
+    def tokenize(self, data: Dataset) -> BatchEncoding:
         if self.train:
             return self._tokenize_train_data(data)
         else:
