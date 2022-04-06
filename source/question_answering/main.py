@@ -1,10 +1,10 @@
 import torch
-from transformers import RobertaTokenizer
+from transformers import RobertaTokenizerFast
 
 from question_answering.models.data2vec import Data2VecQA
 
 pretrained_model_name = "facebook/data2vec-text-base"
-tokenizer = RobertaTokenizer.from_pretrained(pretrained_model_name)
+tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
 model = Data2VecQA(pretrained_model_name)
 
 question, text = "Who was Jim Henson?", "Jim Henson was a nice puppet"
