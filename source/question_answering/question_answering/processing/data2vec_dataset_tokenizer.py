@@ -126,7 +126,7 @@ class Data2VecDatasetTokenizer(DatasetTokenizer):
             padding="max_length"
         )
 
-        # Since one example might give us several features if it has a long context, we need a map from a feature to
+        # Since one example might give us se veral features if it has a long context, we need a map from a feature to
         # its corresponding example. This key gives us just that.
         sample_mapping = tokenized_examples.pop("overflow_to_sample_mapping")
 
