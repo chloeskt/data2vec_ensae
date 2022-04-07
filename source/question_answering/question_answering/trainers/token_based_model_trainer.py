@@ -1,27 +1,22 @@
 import collections
-import os
-from typing import OrderedDict, Optional, Tuple
+import logging
+from typing import OrderedDict
 
 import numpy as np
 from datasets import Dataset
 from tqdm import tqdm
-from transformers import EarlyStoppingCallback, Trainer, TrainingArguments
 from transformers.trainer_utils import PredictionOutput
 
 from .trainer import (
     CustomTrainer,
-    TrainerArguments,
-    DataArguments,
 )
 
 
+# noinspection DuplicatedCode
 class TokenBasedModelTrainer(CustomTrainer):
     """Trainer for token-based models e.g. BERT"""
 
-    def __init__(
-        self, trainer_args: TrainerArguments, data_args: DataArguments, model_name: str
-    ):
-        super().__init__(trainer_args, data_args, model_name)
+    logger = logging.getLogger(__name__)
 
     def _postprocess_qa_predictions(
         self, examples: Dataset, features: Dataset, predictions: PredictionOutput
@@ -39,7 +34,7 @@ class TokenBasedModelTrainer(CustomTrainer):
                 f"Got {len(predictions[0])} predictions and {len(features)} features."
             )
 
-        # Build a map example to its corresponding features.
+        self.logger.info("Mapping each example in data to its corresponding features")
         example_id_to_index = {k: i for i, k in enumerate(examples["id"])}
         features_per_example = collections.defaultdict(list)
         for i, feature in enumerate(features):
@@ -48,7 +43,7 @@ class TokenBasedModelTrainer(CustomTrainer):
         # The dictionaries we have to fill.
         all_predictions = collections.OrderedDict()
 
-        # Let's loop over all the examples!
+        self.logger.info("Looping over all the examples")
         for example_index, example in enumerate(tqdm(examples)):
             # Those are the indices of the features associated to the current example.
             feature_indices = features_per_example[example_index]
@@ -197,5 +192,5 @@ class TokenBasedModelTrainer(CustomTrainer):
                     all_predictions[example["id"]] = ""
                 else:
                     all_predictions[example["id"]] = best_non_null_pred["text"]
-
+        self.logger.info("Done extracting best answers for all examples")
         return all_predictions

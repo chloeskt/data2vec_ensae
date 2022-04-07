@@ -1,4 +1,5 @@
 import collections
+import logging
 from typing import Union, OrderedDict
 
 import numpy as np
@@ -6,17 +7,14 @@ from datasets import Dataset
 from transformers.modeling_outputs import QuestionAnsweringModelOutput
 from transformers.trainer_utils import PredictionOutput
 
-from .trainer import CustomTrainer, TrainerArguments, DataArguments
+from .trainer import CustomTrainer
 
 
 # noinspection DuplicatedCode
 class CharacterBasedModelTrainer(CustomTrainer):
     """Trainer for character-based models e.g. CANINE"""
 
-    def __init__(
-        self, trainer_args: TrainerArguments, data_args: DataArguments, model_name: str
-    ) -> None:
-        super().__init__(trainer_args, data_args, model_name)
+    logger = logging.getLogger(__name__)
 
     def _postprocess_qa_predictions(
         self,
@@ -30,7 +28,7 @@ class CharacterBasedModelTrainer(CustomTrainer):
             all_start_logits = raw_predictions.start_logits.cpu().numpy()
             all_end_logits = raw_predictions.end_logits.cpu().numpy()
 
-        # map each example in data to its correponding features
+        self.logger.info("Mapping each example in data to its corresponding features")
         example_id_to_index = {k: i for i, k in enumerate(examples["id"])}
         features_per_example = collections.defaultdict(list)
         for i, feature in enumerate(features):
@@ -39,7 +37,7 @@ class CharacterBasedModelTrainer(CustomTrainer):
         # The dictionaries we have to fill.
         predictions = collections.OrderedDict()
 
-        # Let's loop over all the examples!
+        self.logger.info("Looping over all the examples")
         for example_index, example in enumerate(examples):
             # Those are the indices of the features associated to the current example.
             feature_indices = features_per_example[example_index]
@@ -119,5 +117,5 @@ class CharacterBasedModelTrainer(CustomTrainer):
                     best_answer["text"] if best_answer["score"] > min_null_score else ""
                 )
                 predictions[example["id"]] = answer
-
+        self.logger.info("Done extracting best answers for all examples")
         return predictions

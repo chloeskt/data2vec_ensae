@@ -1,6 +1,7 @@
+import logging
 import os
-from abc import ABC
-from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Dict, List, OrderedDict, Callable, Optional, Tuple, Union
 
 import torch
@@ -18,7 +19,7 @@ from transformers.data.data_collator import InputDataClass
 from transformers.modeling_outputs import QuestionAnsweringModelOutput
 from transformers.trainer_utils import PredictionOutput
 
-from ..utils.utils import remove_answer_end
+from ..utils import remove_answer_end
 
 QA_METRICS = Tuple[float, float]
 
@@ -29,22 +30,21 @@ class TrainerArguments:
     Arguments needed to initiate a Trainer
     """
 
-    # TODO: complete field
-    model: nn.Module = field()
-    learning_rate: float = field()
-    lr_scheduler: SchedulerType = field()
-    warmup_ratio: float = field()
-    save_strategy: IntervalStrategy = field()
-    save_steps: int = field()
-    epochs: int = field()
-    output_dir: str = field()
-    metric: Any = field()
-    evaluation_strategy: IntervalStrategy = field()
-    weight_decay: float = field()
-    data_collator: Callable[[List[InputDataClass]], Dict[str, Any]] = field()
-    model_save_path: str = field()
-    device: str = field()
-    early_stopping_patience: int = field()
+    model: nn.Module
+    learning_rate: float
+    lr_scheduler: SchedulerType
+    warmup_ratio: float
+    save_strategy: IntervalStrategy
+    save_steps: int
+    epochs: int
+    output_dir: str
+    metric: Any
+    evaluation_strategy: IntervalStrategy
+    weight_decay: float
+    data_collator: Callable[[List[InputDataClass]], Dict[str, Any]]
+    model_save_path: str
+    device: str
+    early_stopping_patience: int
 
 
 @dataclass
@@ -53,18 +53,20 @@ class DataArguments:
     Data arguments needed to initiate a Trainer
     """
 
-    datasets: DatasetDict = field()
-    validation_features: Dataset = field()
-    batch_size: int = field()
-    tokenizer: PreTrainedTokenizer = field()
-    n_best_size: int = field()
-    max_answer_length: int = field()
-    tokenized_datasets: DatasetDict = field()
-    squad_v2: bool = field()
+    datasets: DatasetDict
+    validation_features: Dataset
+    batch_size: int
+    tokenizer: PreTrainedTokenizer
+    n_best_size: int
+    max_answer_length: int
+    tokenized_datasets: DatasetDict
+    squad_v2: bool
 
 
 class CustomTrainer(ABC):
     """General Trainer signature"""
+
+    logger = logging.getLogger(__name__)
 
     def __init__(
         self, trainer_args: TrainerArguments, data_args: DataArguments, model_name: str
@@ -73,11 +75,6 @@ class CustomTrainer(ABC):
         self.data_args = data_args
         self.model_name = model_name
 
-        # Trainer
-        self.trainer = None
-        self.model = None
-
-    def train(self) -> None:
         # Define training arguments
         args = TrainingArguments(
             output_dir=os.path.join(
@@ -115,9 +112,19 @@ class CustomTrainer(ABC):
             ],
         )
 
+    @abstractmethod
+    def _postprocess_qa_predictions(
+        self,
+        data: Dataset,
+        features: Dataset,
+        raw_predictions: Union[PredictionOutput, QuestionAnsweringModelOutput],
+    ) -> OrderedDict:
+        raise NotImplementedError
+
+    def train(self) -> None:
+        self.logger.info("Start training")
         self.trainer.train()
-        # Load best model at the end of training
-        self.model = self.trainer.model
+        self.logger.info("Training done")
 
     def evaluate(self, mode: str, features: Optional[Dataset] = None) -> QA_METRICS:
         if mode == "val":
@@ -130,16 +137,19 @@ class CustomTrainer(ABC):
                 "defined in the DataArguments. If test, one must provide a Dataset of features in the correct"
                 "format."
             )
+        self.logger.info("Predicting on eval/test dataset")
         raw_predictions = self.trainer.predict(_features)
         self.data_args.validation_features.set_format(
             type=self.data_args.validation_features.format["type"],
             columns=list(self.data_args.validation_features.features.keys()),
         )
+        self.logger.info("Postprocessing QA predictions")
         final_predictions = self._postprocess_qa_predictions(
             self.data_args.datasets["validation"],
             self.data_args.validation_features,
             raw_predictions.predictions,
         )
+        self.logger.info("Computing metrics")
         results = self._compute_metrics(
             self.trainer_args.metric,
             self.data_args.datasets["validation"],
@@ -151,17 +161,11 @@ class CustomTrainer(ABC):
         else:
             return results["f1"], results["exact_match"]
 
-    def _postprocess_qa_predictions(
-        self,
-        data: Dataset,
-        features: Dataset,
-        raw_predictions: Union[PredictionOutput, QuestionAnsweringModelOutput],
-    ) -> OrderedDict:
-        raise NotImplementedError
-
     def save_model(self) -> None:
-        print(f"Saving best trained model at {self.trainer_args.model_save_path}")
-        torch.save(self.model.state_dict(), self.trainer_args.model_save_path)
+        self.logger.info(
+            f"Saving best trained model at {self.trainer_args.model_save_path}"
+        )
+        torch.save(self.trainer.model.state_dict(), self.trainer_args.model_save_path)
 
     @staticmethod
     def _compute_metrics(

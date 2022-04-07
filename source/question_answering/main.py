@@ -1,37 +1,49 @@
 import argparse
+import logging
 import os
 
+from datasets import Dataset, load_dataset, load_metric
 from tqdm import tqdm
 
 tqdm.pandas()
 
-from datasets import load_dataset, Dataset, load_metric
 from transformers import (
     CanineForQuestionAnswering,
     CanineTokenizer,
-    RobertaTokenizerFast,
     Data2VecTextForQuestionAnswering,
-    default_data_collator,
     IntervalStrategy,
+    RobertaTokenizerFast,
     SchedulerType,
+    default_data_collator,
+    BertTokenizerFast,
+    BertForQuestionAnswering,
+    RobertaForQuestionAnswering,
 )
 
 from question_answering import (
-    set_seed,
-    Preprocessor,
-    CanineDatasetTokenizer,
-    Data2VecDatasetTokenizer,
-    CanineCTrainer,
-    CanineSTrainer,
-    Data2VecTrainer,
-    TrainerArguments,
     DataArguments,
-    to_pandas,
+    DatasetCharacterBasedTokenizer,
+    DatasetTokenBasedTokenizer,
+    Preprocessor,
+    TrainerArguments,
+    CharacterBasedModelTrainer,
+    TokenBasedModelTrainer,
     remove_examples_longer_than_threshold,
+    set_seed,
+    to_pandas,
 )
 
-seed = 0
-set_seed(seed)
+SEED = 0
+set_seed(SEED)
+
+CANINE_S_MODEL = "canine-s"
+CANINE_C_MODEL = "canine-c"
+BERT_MODEL = "bert"
+MBERT_MODEL = "mbert"
+XLM_ROBERTA_MODEL = "xlm_roberta"
+DATA2VEC_MODEL = "data2vec"
+
+logger = logging.getLogger(__name__)
 
 
 def train_model(
@@ -53,21 +65,26 @@ def train_model(
     max_answer_length: int,
     squad_v2: bool,
 ) -> None:
+    logger.info("Loading dataset")
     datasets = load_dataset("squad_v2" if squad_v2 else "squad")
 
+    logger.info("Adding end_answers to each question")
     preprocessor = Preprocessor(datasets)
     datasets = preprocessor.preprocess()
 
-    if model_name == "canine-s" or model_name == "canine-c":
+    logger.info(f"Preparing for model {model_name}")
+    if model_name in [CANINE_C_MODEL, CANINE_S_MODEL]:
         df_train = to_pandas(datasets["train"])
         df_validation = to_pandas(datasets["validation"])
 
+        logger.info(f"Removing examples longer than threshold for model {model_name}")
         df_train = remove_examples_longer_than_threshold(
             df_train, max_length=max_length * 2, doc_stride=doc_stride
         )
         df_validation = remove_examples_longer_than_threshold(
             df_validation, max_length=max_length * 2, doc_stride=doc_stride
         )
+        logger.info("Done removing examples longer than threshold")
 
         datasets["train"] = Dataset.from_pandas(df_train)
         datasets["validation"] = Dataset.from_pandas(df_validation)
@@ -76,10 +93,9 @@ def train_model(
 
         pretrained_model_name = f"google/{model_name}"
         tokenizer = CanineTokenizer.from_pretrained(pretrained_model_name)
-
         model = CanineForQuestionAnswering.from_pretrained(pretrained_model_name)
 
-        tokenizer_dataset_train = CanineDatasetTokenizer(
+        tokenizer_dataset_train = DatasetCharacterBasedTokenizer(
             tokenizer,
             max_length,
             doc_stride,
@@ -87,76 +103,45 @@ def train_model(
             squad_v2=squad_v2,
             language="en",
         )
-        tokenizer_dataset_val = CanineDatasetTokenizer(
+        tokenizer_dataset_val = DatasetCharacterBasedTokenizer(
             tokenizer,
             max_length,
             doc_stride,
-            train=True,
+            train=False,
             squad_v2=squad_v2,
             language="en",
         )
-
-    elif model_name == "data2vec":
-        pretrained_model_name = "facebook/data2vec-text-base"
-
-        tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
-
-        model = Data2VecTextForQuestionAnswering.from_pretrained(pretrained_model_name)
-
-        tokenizer_dataset_train = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=True
-        )
-        tokenizer_dataset_val = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=False
-        )
-
-    elif model_name == "bert":
-        pretrained_model_name = "bert-base-uncased"
-
-        tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
-
-        model = Data2VecTextForQuestionAnswering.from_pretrained(pretrained_model_name)
-
-        tokenizer_dataset_train = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=True
-        )
-        tokenizer_dataset_val = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=False
-        )
-        pass
-
-    elif model_name == "mbert":
-        pretrained_model_name = "facebook/data2vec-text-base"
-
-        tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
-
-        model = Data2VecTextForQuestionAnswering.from_pretrained(pretrained_model_name)
-
-        tokenizer_dataset_train = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=True
-        )
-        tokenizer_dataset_val = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=False
-        )
-        pass
-
-    elif model_name == "xlm-roberta":
-        pretrained_model_name = "facebook/data2vec-text-base"
-
-        tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
-
-        model = Data2VecTextForQuestionAnswering.from_pretrained(pretrained_model_name)
-
-        tokenizer_dataset_train = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=True
-        )
-        tokenizer_dataset_val = Data2VecDatasetTokenizer(
-            tokenizer, max_length, doc_stride, train=False
-        )
-        pass
-
     else:
-        raise NotImplementedError
+        if model_name == DATA2VEC_MODEL:
+            pretrained_model_name = "facebook/data2vec-text-base"
+            tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
+            model = Data2VecTextForQuestionAnswering.from_pretrained(
+                pretrained_model_name
+            )
+
+        elif model_name == BERT_MODEL:
+            pretrained_model_name = "bert-base-uncased"
+            tokenizer = BertTokenizerFast.from_pretrained(pretrained_model_name)
+            model = BertForQuestionAnswering.from_pretrained(pretrained_model_name)
+
+        elif model_name == MBERT_MODEL:
+            pretrained_model_name = "bert-base-multilingual-cased"
+            tokenizer = BertTokenizerFast.from_pretrained(pretrained_model_name)
+            model = BertForQuestionAnswering.from_pretrained(pretrained_model_name)
+
+        elif model_name == XLM_ROBERTA_MODEL:
+            pretrained_model_name = "bert-base-multilingual-cased"
+            tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
+            model = RobertaForQuestionAnswering.from_pretrained(pretrained_model_name)
+        else:
+            raise NotImplementedError
+
+        tokenizer_dataset_train = DatasetTokenBasedTokenizer(
+            tokenizer, max_length, doc_stride, train=True
+        )
+        tokenizer_dataset_val = DatasetTokenBasedTokenizer(
+            tokenizer, max_length, doc_stride, train=False
+        )
 
     tokenized_datasets = datasets.map(
         tokenizer_dataset_train.tokenize,
@@ -203,17 +188,16 @@ def train_model(
         squad_v2=squad_v2,
     )
 
-    if model_name == "canine-c":
-        trainer = CanineCTrainer(trainer_args, data_args)
-    elif model_name == "canine-s":
-        trainer = CanineSTrainer(trainer_args, data_args)
-    elif model_name == "data2vec":
-        trainer = Data2VecTrainer(trainer_args, data_args)
+    if model_name in [CANINE_C_MODEL, CANINE_S_MODEL]:
+        trainer = CharacterBasedModelTrainer(trainer_args, data_args, model_name)
+    elif model_name in [DATA2VEC_MODEL, BERT_MODEL, MBERT_MODEL, XLM_ROBERTA_MODEL]:
+        trainer = TokenBasedModelTrainer(trainer_args, data_args, model_name)
     else:
         raise NotImplementedError
 
     trainer.train()
 
+    logger.info("START FINAL EVALUATION")
     f1, exact_match = trainer.evaluate(mode="val")
     print("Obtained F1-score: ", f1, "Obtained Exact Match: ", exact_match)
 
@@ -222,6 +206,9 @@ def train_model(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger("datasets.arrow_dataset").setLevel(logging.WARNING)
+
     parser = argparse.ArgumentParser(
         description="Parser for training and data arguments"
     )
