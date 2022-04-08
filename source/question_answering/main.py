@@ -18,6 +18,9 @@ from transformers import (
     BertTokenizerFast,
     BertForQuestionAnswering,
     RobertaForQuestionAnswering,
+    DistilBertTokenizerFast,
+    DistilBertForQuestionAnswering,
+    XLMRobertaTokenizerFast,
 )
 
 from question_answering import (
@@ -43,6 +46,7 @@ MBERT_MODEL = "mbert"
 XLM_ROBERTA_MODEL = "xlm_roberta"
 DATA2VEC_MODEL = "data2vec"
 ROBERTA_MODEL = "roberta"
+DISTILBERT_MODEL = "distilbert"
 
 logger = logging.getLogger(__name__)
 
@@ -132,13 +136,20 @@ def train_model(
 
         elif model_name == XLM_ROBERTA_MODEL:
             pretrained_model_name = "xlm-roberta-base"
-            tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
+            tokenizer = XLMRobertaTokenizerFast.from_pretrained(pretrained_model_name)
             model = RobertaForQuestionAnswering.from_pretrained(pretrained_model_name)
 
         elif model_name == ROBERTA_MODEL:
             pretrained_model_name = "roberta-base"
             tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
             model = RobertaForQuestionAnswering.from_pretrained(pretrained_model_name)
+
+        elif model_name == DISTILBERT_MODEL:
+            pretrained_model_name = "distilbert-base-uncased"
+            tokenizer = DistilBertTokenizerFast.from_pretrained(pretrained_model_name)
+            model = DistilBertForQuestionAnswering.from_pretrained(
+                pretrained_model_name
+            )
 
         else:
             raise NotImplementedError
@@ -197,7 +208,14 @@ def train_model(
 
     if model_name in [CANINE_C_MODEL, CANINE_S_MODEL]:
         trainer = CharacterBasedModelTrainer(trainer_args, data_args, model_name)
-    elif model_name in [DATA2VEC_MODEL, BERT_MODEL, MBERT_MODEL, XLM_ROBERTA_MODEL]:
+    elif model_name in [
+        DATA2VEC_MODEL,
+        BERT_MODEL,
+        MBERT_MODEL,
+        XLM_ROBERTA_MODEL,
+        ROBERTA_MODEL,
+        DISTILBERT_MODEL,
+    ]:
         trainer = TokenBasedModelTrainer(trainer_args, data_args, model_name)
     else:
         raise NotImplementedError

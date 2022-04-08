@@ -64,7 +64,8 @@ question_answering
         ├── xlm_roberta.py
         ├── data2vec.py
         └── canine.py         
-    ├── utils   
+    ├── utils  
+        ├── __init__.py 
         └── utils.py                                # Bunch of utils functions
 └── README.md
 ```
@@ -137,6 +138,7 @@ python3 main.py \
 - [ ] mBERT
 - [ ] XLM-RoBERTa
 - [ ] RoBERTa
+- [ ] DistilBert
 - [ ] CANINE
 
 ## Results \& Discussion
