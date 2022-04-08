@@ -7,7 +7,9 @@ It has been developed by FAIR quite recently and has shown promising results in 
 goal will be to study its performance on several tasks in NLP and compare it to the best single-purpose algorithms in 
 this domain. 
 
-# Motivation and goal
+# Motivation and goals
+
+NB: we considered two tasks in the end due to time and hardware/compute constraints.
 
 ## Problem definition 
 
@@ -41,27 +43,35 @@ computational settings as we do not have access to huge clusters as FAIR does.
 on the downstream tasks of image classification. Other tasks might be considered such as image captioning using the [COCO 
 (Common Objects in Context) dataset](https://cocodataset.org/).
 - Natural Language Processing: in order to reproduce the paper's results, we shall fine-tune the model on the GLUe benchmark. 
-Note that not all tasks might be considered e.g. we might consider only Question Answering (SQUAD), Natural Language Inference 
+Note that **not all tasks might be considered** e.g. we might consider only Question Answering (SQUAD), Natural Language Inference 
 (MNLI) and Sentiment Analysis (SST-2). One interesting thing would be to evaluate data2vec performances on multi-lingual 
 Question Answering for instance (using XQUAD in zero-shot transfer).
 
 ## Evaluation
 
 For image classification we will focus on top-1 validation accuracy on ImageNet-1K as it is a standard benchmark. 
-For NLP, depending on the downstream task we will look at the F1-score (Question Answering), accuracy on both the macthed 
+For NLP, depending on the downstream task we will look at the **F1-score (Question Answering)**, accuracy on both the matched 
 and unmatched dev sets (Natural Language Inference) and the unweighted average of Pearson and Spearman correlation or 
 accuracy (Sentiment Analysis). 
 
 # Installation 
 
-After creating for virtual environment, please run:
-
-``
-pip install -r requirements
-``
-
-Please note that you will need to update manually the versions of torch, torchaudio and torchvision depending on your hardware.
+After creating for virtual environment, please refer to each folder ``README.md`` i.e. see installation guidelines in
+``source/question_answering`` for Question Answering task.
 
 # Structure of the repository 
 
-- [ ] TO BE DONE
+In the end due to time and hardware/compute constraints, we considered two mains tasks:
+- question answering (F1 score \& Exact match)
+- sentiment analysis ()
+
+```
+dl_ensae
+├── .gitignore                  
+├── Project_proposal            # Our project proposal
+├── Final_report                # Out final report
+├── source                      # Source code main package   
+    ├── question_answering/     # Question answering related source code                         
+    └── sentiment_classif/      # Sentiment classification related source code  
+└── README.md
+```

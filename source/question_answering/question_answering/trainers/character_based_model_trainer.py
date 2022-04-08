@@ -4,6 +4,7 @@ from typing import Union, OrderedDict
 
 import numpy as np
 from datasets import Dataset
+from tqdm import tqdm
 from transformers.modeling_outputs import QuestionAnsweringModelOutput
 from transformers.trainer_utils import PredictionOutput
 
@@ -38,7 +39,7 @@ class CharacterBasedModelTrainer(CustomTrainer):
         predictions = collections.OrderedDict()
 
         self.logger.info("Looping over all the examples")
-        for example_index, example in enumerate(examples):
+        for example_index, example in enumerate(tqdm(examples)):
             # Those are the indices of the features associated to the current example.
             feature_indices = features_per_example[example_index]
 

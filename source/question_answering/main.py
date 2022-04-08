@@ -42,6 +42,7 @@ BERT_MODEL = "bert"
 MBERT_MODEL = "mbert"
 XLM_ROBERTA_MODEL = "xlm_roberta"
 DATA2VEC_MODEL = "data2vec"
+ROBERTA_MODEL = "roberta"
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +134,12 @@ def train_model(
             pretrained_model_name = "xlm-roberta-base"
             tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
             model = RobertaForQuestionAnswering.from_pretrained(pretrained_model_name)
+
+        elif model_name == ROBERTA_MODEL:
+            pretrained_model_name = "roberta-base"
+            tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
+            model = RobertaForQuestionAnswering.from_pretrained(pretrained_model_name)
+
         else:
             raise NotImplementedError
 
