@@ -38,10 +38,10 @@ question [TODO].
 
 ```
 question_answering  
-├── __init__.py
 ├── main.py                                         # Main script to finetuned models on SQuADv2/SQuADv1.1 dataset
 ├── requirements.txt
 ├── question_answering                              # Main Python package
+    ├── __init__.py
     ├── dataset_tokenizers
         ├── __init__.py
         ├── dataset_character_based_tokenizer.py    # DatasetTokenizer for character-based models (e.g. CANINE)
