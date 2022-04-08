@@ -11,7 +11,6 @@ class DatasetTokenBasedTokenizer:
             doc_stride: int,
             train: bool,
     ):
-        super().__init__()
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.doc_stride = doc_stride

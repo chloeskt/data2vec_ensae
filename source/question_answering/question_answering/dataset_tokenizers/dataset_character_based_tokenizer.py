@@ -20,7 +20,6 @@ class DatasetCharacterBasedTokenizer:
         squad_v2: bool,
         language: str = "en",
     ) -> None:
-        super().__init__()
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.doc_stride = doc_stride
