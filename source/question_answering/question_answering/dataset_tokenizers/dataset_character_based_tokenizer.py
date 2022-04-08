@@ -289,7 +289,7 @@ class DatasetCharacterBasedTokenizer:
                     is_in_second_part = True
 
             if not is_in_first_part and not is_in_second_part:
-                self.logger.debug()
+                self.logger.debug("\n")
                 self.logger.debug("\033[91mERROR WITH PREDICTION OF: \033[0m")
                 self.logger.debug("True answer: ")
                 self.logger.debug(f">{rep}<")
@@ -305,7 +305,7 @@ class DatasetCharacterBasedTokenizer:
                 else:
                     languages = ["vi", "en", "ar", "zh", "es", "hi", "ru"]
                 if self.language in languages:
-                    self.logger.debug()
+                    self.logger.debug("\n")
                     self.logger.debug("\033[91mTRYING TO FIX PREDICTIONS: \033[0m")
                     if len(tokenized_examples["overflowing_tokens"][i]) == 0:
                         # no overflow
