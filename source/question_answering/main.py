@@ -130,7 +130,7 @@ def train_model(
             model = BertForQuestionAnswering.from_pretrained(pretrained_model_name)
 
         elif model_name == XLM_ROBERTA_MODEL:
-            pretrained_model_name = "bert-base-multilingual-cased"
+            pretrained_model_name = "xlm-roberta-base"
             tokenizer = RobertaTokenizerFast.from_pretrained(pretrained_model_name)
             model = RobertaForQuestionAnswering.from_pretrained(pretrained_model_name)
         else:
@@ -206,8 +206,13 @@ def train_model(
 
 
 if __name__ == "__main__":
+    debug = False
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("datasets.arrow_dataset").setLevel(logging.WARNING)
+    if debug:
+        logger.getChild("question_answering.DatasetCharacterBasedTokenizer").setLevel(
+            logging.DEBUG
+        )
 
     parser = argparse.ArgumentParser(
         description="Parser for training and data arguments"

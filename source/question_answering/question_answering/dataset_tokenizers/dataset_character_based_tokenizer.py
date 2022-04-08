@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Union, List
 
 from datasets import Dataset
@@ -8,14 +9,16 @@ CANINE_TOKENIZED_EXAMPLES = Dict[str, Union[List[List[int]], List[int]]]
 
 # noinspection DuplicatedCode
 class DatasetCharacterBasedTokenizer:
+    logger = logging.getLogger(__name__)
+
     def __init__(
-            self,
-            tokenizer: PreTrainedTokenizer,
-            max_length: int,
-            doc_stride: int,
-            train: bool,
-            squad_v2: bool,
-            language: str = "en",
+        self,
+        tokenizer: PreTrainedTokenizer,
+        max_length: int,
+        doc_stride: int,
+        train: bool,
+        squad_v2: bool,
+        language: str = "en",
     ) -> None:
         super().__init__()
         self.tokenizer = tokenizer
@@ -90,7 +93,7 @@ class DatasetCharacterBasedTokenizer:
 
                 # attention mask
                 attention_mask = [1] * (len(overflow_input_ids) + 1) + [0] * (
-                        self.max_length - len(overflow_input_ids)
+                    self.max_length - len(overflow_input_ids)
                 )
                 # truncate if needed
                 attention_mask = attention_mask[: self.max_length]
@@ -99,19 +102,19 @@ class DatasetCharacterBasedTokenizer:
 
                 # token_type_ids: 0 if question, 1 if context, 0 if padding
                 token_type_ids = (
-                                         [0] * len(tokens_question)
-                                         + [1] * (len(overflow) + 1)
-                                         + [0] * (self.max_length - len(overflow_input_ids))
-                                 )[: self.max_length]
+                    [0] * len(tokens_question)
+                    + [1] * (len(overflow) + 1)
+                    + [0] * (self.max_length - len(overflow_input_ids))
+                )[: self.max_length]
                 final_token_type_ids.append(token_type_ids)
 
                 # pad input_ids if necessary
                 sep_id = self.tokenizer.sep_token_id
                 overflow_input_ids = (
-                                             overflow_input_ids
-                                             + [sep_id]
-                                             + [0] * (self.max_length - len(overflow_input_ids) - 1)
-                                     )[: self.max_length]
+                    overflow_input_ids
+                    + [sep_id]
+                    + [0] * (self.max_length - len(overflow_input_ids) - 1)
+                )[: self.max_length]
 
                 # add in input_ids the context
                 final_input_ids.append(overflow_input_ids)
@@ -133,6 +136,7 @@ class DatasetCharacterBasedTokenizer:
         }
 
     def _tokenize_train_data(self, data: Dataset) -> CANINE_TOKENIZED_EXAMPLES:
+        self.logger.info("Start tokenizing dataset for training")
         # Some of the questions have lots of whitespace on the left, which is not useful and will make the
         # truncation of the context fail (the tokenized question will take a lots of space). So we remove that
         # left whitespace
@@ -192,7 +196,7 @@ class DatasetCharacterBasedTokenizer:
                 final_end_positions.append(cls_index)
 
             ac = self.tokenizer.decode(
-                final_input_ids[-1][final_start_positions[-1]: final_end_positions[-1]]
+                final_input_ids[-1][final_start_positions[-1] : final_end_positions[-1]]
             )
 
             is_in_first_part = False
@@ -217,7 +221,7 @@ class DatasetCharacterBasedTokenizer:
 
                 # attention mask
                 attention_mask = [1] * (len(overflow_input_ids) + 1) + [0] * (
-                        self.max_length - len(overflow_input_ids)
+                    self.max_length - len(overflow_input_ids)
                 )
                 # truncate if needed
                 attention_mask = attention_mask[: self.max_length]
@@ -226,25 +230,25 @@ class DatasetCharacterBasedTokenizer:
 
                 # token_type_ids: 0 if question, 1 if context, 0 if padding
                 token_type_ids = (
-                                         [0] * len(tokens_question)
-                                         + [1] * (len(overflow) + 1)
-                                         + [0] * (self.max_length - len(overflow_input_ids))
-                                 )[: self.max_length]
+                    [0] * len(tokens_question)
+                    + [1] * (len(overflow) + 1)
+                    + [0] * (self.max_length - len(overflow_input_ids))
+                )[: self.max_length]
                 final_token_type_ids.append(token_type_ids)
 
                 # pad input_ids if necessary
                 sep_id = self.tokenizer.sep_token_id
                 overflow_input_ids = (
-                                             overflow_input_ids
-                                             + [sep_id]
-                                             + [0] * (self.max_length - len(overflow_input_ids) - 1)
-                                     )[: self.max_length]
+                    overflow_input_ids
+                    + [sep_id]
+                    + [0] * (self.max_length - len(overflow_input_ids) - 1)
+                )[: self.max_length]
 
                 # add in input_ids the context
                 final_input_ids.append(overflow_input_ids)
 
                 start_character_in_context = (
-                        self.max_length - 1 - len(tokens_question) - self.doc_stride
+                    self.max_length - 1 - len(tokens_question) - self.doc_stride
                 )
 
                 # If no answers are given, set the cls_index as answer.
@@ -252,23 +256,23 @@ class DatasetCharacterBasedTokenizer:
                     final_start_positions.append(cls_index)
                     final_end_positions.append(cls_index)
                 elif (
-                        answers["answer_start"][0] >= start_character_in_context
-                        and answers["answer_end"][0]
-                        < self.max_length
-                        - len(tokens_question)
-                        - 1
-                        + start_character_in_context
+                    answers["answer_start"][0] >= start_character_in_context
+                    and answers["answer_end"][0]
+                    < self.max_length
+                    - len(tokens_question)
+                    - 1
+                    + start_character_in_context
                 ):
                     relative_start = (
-                            answers["answer_start"][0]
-                            - start_character_in_context
-                            + len(tokens_question)
+                        answers["answer_start"][0]
+                        - start_character_in_context
+                        + len(tokens_question)
                     )
 
                     relative_end = (
-                            answers["answer_end"][0]
-                            - start_character_in_context
-                            + len(tokens_question)
+                        answers["answer_end"][0]
+                        - start_character_in_context
+                        + len(tokens_question)
                     )
 
                     final_start_positions.append(relative_start)
@@ -279,22 +283,22 @@ class DatasetCharacterBasedTokenizer:
 
                 ac_overflow = self.tokenizer.decode(
                     final_input_ids[-1][
-                    final_start_positions[-1]: final_end_positions[-1]
+                        final_start_positions[-1] : final_end_positions[-1]
                     ]
                 )
                 if rep == ac_overflow:
                     is_in_second_part = True
 
             if not is_in_first_part and not is_in_second_part:
-                print()
-                print("\033[91mERROR WITH PREDICTION OF: \033[0m")
-                print("True answer: ")
-                print(f">{rep}<")
-                print("context", data["context"][i])
-                print("question", data["question"][i])
-                print(answers)
-                print(f"answer computed ac >{ac}<")
-                print(f"answer computed ac_overflow >{ac_overflow}<")
+                self.logger.debug()
+                self.logger.debug("\033[91mERROR WITH PREDICTION OF: \033[0m")
+                self.logger.debug("True answer: ")
+                self.logger.debug(f">{rep}<")
+                self.logger.debug("context", data["context"][i])
+                self.logger.debug("question", data["question"][i])
+                self.logger.debug(answers)
+                self.logger.debug(f"answer computed ac >{ac}<")
+                self.logger.debug(f"answer computed ac_overflow >{ac_overflow}<")
 
                 # handle special cases depending on language
                 if self.squad_v2:
@@ -302,8 +306,8 @@ class DatasetCharacterBasedTokenizer:
                 else:
                     languages = ["vi", "en", "ar", "zh", "es", "hi", "ru"]
                 if self.language in languages:
-                    print()
-                    print("\033[91mTRYING TO FIX PREDICTIONS: \033[0m")
+                    self.logger.debug()
+                    self.logger.debug("\033[91mTRYING TO FIX PREDICTIONS: \033[0m")
                     if len(tokenized_examples["overflowing_tokens"][i]) == 0:
                         # no overflow
                         final_start_positions[-1] -= 1
@@ -311,10 +315,10 @@ class DatasetCharacterBasedTokenizer:
 
                         ac = self.tokenizer.decode(
                             final_input_ids[-1][
-                            final_start_positions[-1]: final_end_positions[-1]
+                                final_start_positions[-1] : final_end_positions[-1]
                             ]
                         )
-                        print(f"new computed answer: >{ac}<")
+                        self.logger.debug(f"new computed answer: >{ac}<")
 
                         if ac == rep:
                             pass
@@ -326,9 +330,9 @@ class DatasetCharacterBasedTokenizer:
 
                                 ac = self.tokenizer.decode(
                                     final_input_ids[-1][
-                                    final_start_positions[-1]: final_end_positions[
-                                        -1
-                                    ]
+                                        final_start_positions[-1] : final_end_positions[
+                                            -1
+                                        ]
                                     ]
                                 )
                     else:
@@ -343,16 +347,18 @@ class DatasetCharacterBasedTokenizer:
 
                             ac = self.tokenizer.decode(
                                 final_input_ids[-2][
-                                final_start_positions[-2]: final_end_positions[-2]
+                                    final_start_positions[-2] : final_end_positions[-2]
                                 ]
                             )
-                            print(f"new computed answer instead of ac : >{ac}<")
+                            self.logger.debug(
+                                f"new computed answer instead of ac : >{ac}<"
+                            )
                             ac_overflow = self.tokenizer.decode(
                                 final_input_ids[-1][
-                                final_start_positions[-1]: final_end_positions[-1]
+                                    final_start_positions[-1] : final_end_positions[-1]
                                 ]
                             )
-                            print(
+                            self.logger.debug(
                                 f"new computed answer instead of ac_overflow: >{ac_overflow}<"
                             )
 
@@ -368,21 +374,21 @@ class DatasetCharacterBasedTokenizer:
 
                                     ac = self.tokenizer.decode(
                                         final_input_ids[-2][
-                                        final_start_positions[
-                                            -2
-                                        ]: final_end_positions[-2]
+                                            final_start_positions[
+                                                -2
+                                            ] : final_end_positions[-2]
                                         ]
                                     )
                                     ac_overflow = self.tokenizer.decode(
                                         final_input_ids[-1][
-                                        final_start_positions[
-                                            -1
-                                        ]: final_end_positions[-1]
+                                            final_start_positions[
+                                                -1
+                                            ] : final_end_positions[-1]
                                         ]
                                     )
 
                         elif ac is not None and (
-                                ac_overflow is None or ac_overflow == ""
+                            ac_overflow is None or ac_overflow == ""
                         ):
                             # only in the first part:
                             final_start_positions[-2] -= 1
@@ -390,10 +396,10 @@ class DatasetCharacterBasedTokenizer:
 
                             ac = self.tokenizer.decode(
                                 final_input_ids[-2][
-                                final_start_positions[-2]: final_end_positions[-2]
+                                    final_start_positions[-2] : final_end_positions[-2]
                                 ]
                             )
-                            print(f"new computed answer: >{ac}<")
+                            self.logger.debug(f"new computed answer: >{ac}<")
 
                             if ac == rep:
                                 pass
@@ -404,9 +410,9 @@ class DatasetCharacterBasedTokenizer:
 
                                     ac = self.tokenizer.decode(
                                         final_input_ids[-2][
-                                        final_start_positions[
-                                            -2
-                                        ]: final_end_positions[-2]
+                                            final_start_positions[
+                                                -2
+                                            ] : final_end_positions[-2]
                                         ]
                                     )
 
@@ -417,10 +423,10 @@ class DatasetCharacterBasedTokenizer:
 
                             ac_overflow = self.tokenizer.decode(
                                 final_input_ids[-1][
-                                final_start_positions[-1]: final_end_positions[-1]
+                                    final_start_positions[-1] : final_end_positions[-1]
                                 ]
                             )
-                            print(f"new computed answer: >{ac_overflow}<")
+                            self.logger.debug(f"new computed answer: >{ac_overflow}<")
 
                             if ac_overflow == rep:
                                 pass
@@ -431,9 +437,9 @@ class DatasetCharacterBasedTokenizer:
 
                                     ac_overflow = self.tokenizer.decode(
                                         final_input_ids[-1][
-                                        final_start_positions[
-                                            -1
-                                        ]: final_end_positions[-1]
+                                            final_start_positions[
+                                                -1
+                                            ] : final_end_positions[-1]
                                         ]
                                     )
 
@@ -441,13 +447,15 @@ class DatasetCharacterBasedTokenizer:
                             raise NotImplementedError
                     # make again the check with rep
                     if rep == ac or rep == ac_overflow:
-                        print("\033[92mSECOND CHECK DID PASS \033[0m")
+                        self.logger.debug("\033[92mSECOND CHECK DID PASS \033[0m")
                     else:
-                        print("\033[91mSECOND CHECK DID NOT PASS: \033[0m")
-                        print("True text: ", rep)
-                        print(f"answer computed ac >{ac}<")
-                        print(f"answer computed ac_overflow >{ac_overflow}<")
-
+                        self.logger.debug("\033[91mSECOND CHECK DID NOT PASS: \033[0m")
+                        self.logger.debug("True text: ", rep)
+                        self.logger.debug(f"answer computed ac >{ac}<")
+                        self.logger.debug(
+                            f"answer computed ac_overflow >{ac_overflow}<"
+                        )
+        self.logger.info("Done tokenizing dataset for training")
         return {
             "input_ids": final_input_ids,
             "attention_mask": final_attention_masks,
