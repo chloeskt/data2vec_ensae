@@ -3,7 +3,7 @@ import logging
 import os
 
 import torch
-from datasets import Dataset, load_dataset, load_metric
+from datasets import Dataset, load_dataset, load_metric, load_from_disk
 from tqdm import tqdm
 
 tqdm.pandas()
@@ -49,6 +49,11 @@ DATA2VEC_MODEL = "data2vec"
 ROBERTA_MODEL = "roberta"
 DISTILBERT_MODEL = "distilbert"
 
+SQUAD_V2_DATASET_NAME = "squad_v2"
+SQUAD_DATASET_NAME = "squad"
+XQUAD_DATASET_NAME = "xquad"
+NOISY_DATASET_NAME = "noisy"
+
 logger = logging.getLogger(__name__)
 
 
@@ -72,11 +77,14 @@ def train_model(
     max_answer_length: int,
     squad_v2: bool,
     eval_only: bool,
-    path_to_finetuned_model: str
+    path_to_finetuned_model: str,
+    dir_data_noisy: str,
 ) -> None:
     logger.info(f"Loading dataset {dataset_name}")
     if dataset_name == "xquad":
         datasets = load_dataset(dataset_name, "xquad.en")
+    elif dataset_name == "noisy":
+        datasets = load_from_disk(dir_data_noisy)
     else:
         datasets = load_dataset(dataset_name)
 
@@ -260,26 +268,59 @@ if __name__ == "__main__":
     )
 
     # TODO: add help field
-    parser.add_argument("--model_name", type=str, help="Name of the model")
-    parser.add_argument("--learning_rate", type=float)
-    parser.add_argument("--weight_decay", type=float)
-    parser.add_argument("--type_lr_scheduler", type=str)
-    parser.add_argument("--warmup_ratio", type=float)
-    parser.add_argument("--save_strategy", type=str)
-    parser.add_argument("--save_steps", type=int)
-    parser.add_argument("--num_epochs", type=int)
-    parser.add_argument("--early_stopping_patience", type=int)
-    parser.add_argument("--output_dir", type=str)
-    parser.add_argument("--device", type=str)
-    parser.add_argument("--dataset_name", type=str, default="squad_v2")
-    parser.add_argument("--batch_size", type=int)
-    parser.add_argument("--max_length", type=int)
-    parser.add_argument("--doc_stride", type=int)
-    parser.add_argument("--n_best_size", type=int)
-    parser.add_argument("--max_answer_length", type=int)
-    parser.add_argument("--squad_v2", type=bool)
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        help="Name of the model",
+        choices=[
+            DATA2VEC_MODEL,
+            MBERT_MODEL,
+            BERT_MODEL,
+            CANINE_S_MODEL,
+            CANINE_C_MODEL,
+            DATA2VEC_MODEL,
+            ROBERTA_MODEL,
+            XLM_ROBERTA_MODEL,
+            DISTILBERT_MODEL,
+        ],
+        required=True,
+    )
+    parser.add_argument("--learning_rate", type=float, required=True)
+    parser.add_argument("--weight_decay", type=float, required=True)
+    parser.add_argument("--type_lr_scheduler", type=str, required=True)
+    parser.add_argument("--warmup_ratio", type=float, required=True)
+    parser.add_argument("--save_strategy", type=str, required=True)
+    parser.add_argument("--save_steps", type=int, required=True)
+    parser.add_argument("--num_epochs", type=int, required=True)
+    parser.add_argument("--early_stopping_patience", type=int, required=True)
+    parser.add_argument("--output_dir", type=str, required=True)
+    parser.add_argument("--device", type=str, required=True)
+    parser.add_argument(
+        "--dataset_name",
+        type=str,
+        default="squad_v2",
+        choices=[
+            SQUAD_V2_DATASET_NAME,
+            SQUAD_DATASET_NAME,
+            XQUAD_DATASET_NAME,
+            NOISY_DATASET_NAME,
+        ],
+        required=True,
+    )
+    parser.add_argument("--batch_size", type=int, required=True)
+    parser.add_argument("--max_length", type=int, required=True)
+    parser.add_argument("--doc_stride", type=int, required=True)
+    parser.add_argument("--n_best_size", type=int, required=True)
+    parser.add_argument("--max_answer_length", type=int, required=True)
+    parser.add_argument("--squad_v2", type=bool, required=True)
     parser.add_argument("--eval_only", type=bool, default=False)
     parser.add_argument("--path_to_finetuned_model", type=str, default=None)
+    parser.add_argument(
+        "--dir_data_noisy",
+        type=str,
+        default=None,
+        help="Path towards noisy datan will be used only if `dataset_name` is set to noisy",
+    )
 
     args = parser.parse_args()
 
@@ -303,5 +344,6 @@ if __name__ == "__main__":
         max_answer_length=args.max_answer_length,
         squad_v2=args.squad_v2,
         eval_only=args.eval_only,
-        path_to_finetuned_model=args.path_to_finetuned_model
+        path_to_finetuned_model=args.path_to_finetuned_model,
+        dir_data_noisy=args.dir_data_noisy,
     )
