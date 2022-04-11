@@ -54,6 +54,7 @@ class DataArguments:
     """
 
     datasets: DatasetDict
+    dataset_name: str
     validation_features: Dataset
     batch_size: int
     tokenizer: PreTrainedTokenizer
@@ -98,10 +99,15 @@ class CustomTrainer(ABC):
         )
 
         # Initiate Hugging Face Trainer
+        if self.data_args.dataset_name == "xquad":
+            train_dataset = self.data_args.tokenized_datasets["validation"]
+        else:
+            train_dataset = self.data_args.tokenized_datasets["train"]
+
         self.trainer = Trainer(
             self.trainer_args.model,
             args,
-            train_dataset=self.data_args.tokenized_datasets["train"],
+            train_dataset=train_dataset,
             eval_dataset=self.data_args.tokenized_datasets["validation"],
             data_collator=self.trainer_args.data_collator,
             tokenizer=self.data_args.tokenizer,
