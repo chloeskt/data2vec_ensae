@@ -11,28 +11,25 @@ Sekkat and can be viewed as a Python package whose main functions/classes can be
 
 ## Task description
 
-In this section, we are interested by the capacities of the embeddings produced by data2vec against both token-based models
-such as BERT, RoBERTa, mBERT and XLM-RoBERTa and token-free models (character-based) such as CANINE on Question Answering tasks.
-Note CANINE is a pre-trained tokenization-free and vocabulary-free encoder, that operates directly on character sequences without explicit
-tokenization. It seeks to generalize beyond the orthographic forms encountered during pre-training. data2vec is an 
-algorithm that can learn a contextualized latent representations instead of modality-specific representations. Its 
-learning objective is the same across all modalities: masked learning to produce latent target **continuous and 
-contextualized representations**, using a teacher-student architecture training scheme.
+In this section, we are interested by the capacities of the embeddings produced by data2vec. We evaluate its capacities 
+on extractive Question Answering (select minimal span answer within a context) on SQuADv2 dataset. The latter is
+a unilingual (English) dataset. The two main metrics used are the F1 score and the Exact Match (EM) score. The obtained
+F1-scores are being compared to BERT-like models (BERT, DistilBERT, XLM-RoBERTa and mBERT) and CANINE. Note that mBERT, 
+XLM-RoBERTa and CANINE were pre-trained on multilingual data. \textbf{Therefore data2vec is only directly comparable to 
+BERT and RoBERTa, but it is still interesting to get the performances on other models on the same task.}
 
-We evaluate its capacities on extractive question answering (select minimal span answer within a context) on SQuAD dataset. The latter is
-a unilingual (English) dataset available in Hugging Face (simple as ``load_dataset("squad_v2")``). Obtained F1-scores are being
-compared to BERT-like models (BERT, mBERT and XLM-RoBERTa) and CANINE. Note that mBERT, XLM-RoBERTa and CANINE where
-trained on **multilingual data**. **Therefore data2vec is only directly comparable to BERT and RoBERTa, but it is still interesting to
-get the performances on other models on the same task.**
+A second step of our analysis is to assess data2vec abilities to handle noisy inputs, especially noisy questions. The 
+robustness to noise of such system is imperative. It is highly probable that in real life settings, the Automatic Speech 
+Recognition system (ASR) or the human typing the question actually do not produce qualitative text in the sense that the 
+written-translation might be flawed (typos, misspellings, grammatical errors, etc). 
 
-A second step is to assess its capacities of generalization in the context of zero-shot transfer. Finetuned on an English
-dataset and then directly evaluated on a multi-lingual dataset with 11 languages of various morphologies (XQuAD). Intuitively, 
-only the models trained on multilingual data will be able to generalize. Therefore this experience will only allow us to
-compare mBERT, XLM-RoBERTa and CANINE. 
-
-A third step is to assess data2vec's capacities to handle noisy inputs, especially noisy questions as it is highly 
-probable that in real life settings, the ASR system or the human typing the question will not provide a perfect/clean
-question [TODO]. 
+The last step is not trutly focused on data2vec but rather on multi-lingual models and their capacities of generalization 
+in the context of zero-shot transfer. We decided to include this experiment on zero-shot transfer on a multi-lingual 
+dataset here even if it is biased because it allows to compare models pre-trained on multilingual data and that we are 
+interested by the zero-shot transfer task. Models are finetuned on an English dataset and then directly evaluated on a 
+multi-lingual dataset with 11 languages of various morphologies (XQuAD). Intuitively, only the models trained on 
+multilingual data will be able to generalize. Therefore this experience will only allow us to compare mBERT, XLM-RoBERTa 
+and CANINE. For the sake of completeness we will nonetheless add the scores obtained by data2vec, BERT, DistilBERT and RoBERTa. 
 
 ## Structure
 

@@ -79,10 +79,11 @@ def train_model(
     eval_only: bool,
     path_to_finetuned_model: str,
     dir_data_noisy: str,
+    xsquad_subdataset_name: str,
 ) -> None:
     logger.info(f"Loading dataset {dataset_name}")
     if dataset_name == "xquad":
-        datasets = load_dataset(dataset_name, "xquad.en")
+        datasets = load_dataset(dataset_name, xsquad_subdataset_name)
     elif dataset_name == "noisy":
         datasets = load_from_disk(dir_data_noisy)
     else:
@@ -307,6 +308,7 @@ if __name__ == "__main__":
         ],
         required=True,
     )
+    parser.add_argument("--xsquad_subdataset_name", type=str, default="xquad.en")
     parser.add_argument("--batch_size", type=int, required=True)
     parser.add_argument("--max_length", type=int, required=True)
     parser.add_argument("--doc_stride", type=int, required=True)
@@ -346,4 +348,5 @@ if __name__ == "__main__":
         eval_only=args.eval_only,
         path_to_finetuned_model=args.path_to_finetuned_model,
         dir_data_noisy=args.dir_data_noisy,
+        xsquad_subdataset_name=args.xsquad_subdataset_name
     )
