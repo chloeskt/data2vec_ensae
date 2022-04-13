@@ -41,9 +41,6 @@ class Dataset_:
     def __len__(self):
         return len(self.data)
 
-    def __get__(self):
-        return self.data
-
     def tokenization(self, data, tokenizer):
         input_ids = []
         attention_masks = []
