@@ -45,7 +45,6 @@ class Dataset_:
         return self.data
 
     def tokenization(self, data, tokenizer):
-        preprocessing = dataset.preprocessing
         input_ids = []
         attention_masks = []
 
@@ -141,7 +140,6 @@ class AirlineComplaints(Dataset_):
         return len(self.data)
 
     def tokenization(self, data, tokenizer):
-        preprocessing = dataset.preprocessing
         input_ids = []
         attention_masks = []
 
