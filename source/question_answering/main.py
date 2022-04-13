@@ -1,8 +1,11 @@
 import argparse
 import logging
 import os
+import random
 
+import datasets as data
 import torch
+import transformers
 from datasets import Dataset, load_dataset, load_metric, load_from_disk
 from tqdm import tqdm
 
@@ -53,6 +56,8 @@ SQUAD_V2_DATASET_NAME = "squad_v2"
 SQUAD_DATASET_NAME = "squad"
 XQUAD_DATASET_NAME = "xquad"
 NOISY_DATASET_NAME = "noisy"
+DYNABENCH_DATASET_NAME = "dynabench/qa"
+CUAD_DATASET_NAME = "cuad"
 
 logger = logging.getLogger(__name__)
 
@@ -79,19 +84,29 @@ def train_model(
     eval_only: bool,
     path_to_finetuned_model: str,
     dir_data_noisy: str,
-    xsquad_subdataset_name: str,
+    xquad_subdataset_name: str,
+    few_shot_learning: bool,
 ) -> None:
     logger.info(f"Loading dataset {dataset_name}")
-    if dataset_name == "xquad":
-        datasets = load_dataset(dataset_name, xsquad_subdataset_name)
-    elif dataset_name == "noisy":
+    if dataset_name == XQUAD_DATASET_NAME:
+        datasets = load_dataset(dataset_name, xquad_subdataset_name)
+    elif dataset_name == NOISY_DATASET_NAME:
         datasets = load_from_disk(dir_data_noisy)
+    elif dataset_name == DYNABENCH_DATASET_NAME:
+        datasets = load_dataset(dataset_name, "dynabench.qa.r1.dbert")
+        datasets.pop("test")
+    elif dataset_name == CUAD_DATASET_NAME:
+        datasets = load_dataset(dataset_name)
+        datasets["validation"] = datasets["test"]
+        datasets.pop("test")
     else:
         datasets = load_dataset(dataset_name)
 
     logger.info("Adding end_answers to each question")
     preprocessor = Preprocessor(datasets)
     datasets = preprocessor.preprocess()
+
+    print(datasets)
 
     logger.info(f"Preparing for model {model_name}")
     if model_name in [CANINE_C_MODEL, CANINE_S_MODEL]:
@@ -111,6 +126,18 @@ def train_model(
         datasets["validation"] = Dataset.from_pandas(df_validation)
 
         del df_train, df_validation
+
+        print(datasets)
+
+        if few_shot_learning:
+            logger.info("Selecting 1% of the train dataset, keeping only these to train")
+            total_len = datasets["train"].num_rows
+            indices = [x for x in range(total_len)]
+            random_indices = random.sample(indices, 224)
+            datasets["train"] = datasets["train"].select(random_indices)
+
+        datasets.save_to_disk("/content/drive/MyDrive/models/cuad")
+        print(datasets)
 
         pretrained_model_name = f"google/{model_name}"
         tokenizer = CanineTokenizer.from_pretrained(pretrained_model_name)
@@ -170,6 +197,23 @@ def train_model(
         else:
             raise NotImplementedError
 
+        # if few_shot_learning:
+        #     logger.info("Selecting 1% of the train dataset, keeping only these to train")
+        #     total_len = datasets["train"].num_rows
+        #     indices = [x for x in range(total_len)]
+        #     keep = int(total_len * 0.01)
+        #     random_indices = random.sample(indices, keep)
+        #     datasets["train"] = datasets["train"].select(random_indices)
+        #
+        #     if dataset_name == CUAD_DATASET_NAME:
+        #         total_len = datasets["validation"].num_rows
+        #         indices = [x for x in range(total_len)]
+        #         keep = int(total_len * 0.3)
+        #         random_indices = random.sample(indices, keep)
+        #         datasets["validation"] = datasets["validation"].select(random_indices)
+
+        print(datasets)
+
         tokenizer_dataset_train = DatasetTokenBasedTokenizer(
             tokenizer, max_length, doc_stride, train=True
         )
@@ -192,7 +236,7 @@ def train_model(
     data_collator = default_data_collator
     metric = load_metric("squad_v2" if squad_v2 else "squad")
 
-    if eval_only:
+    if eval_only or few_shot_learning:
         logger.info("Loading own finetuned model")
         model.load_state_dict(torch.load(path_to_finetuned_model, map_location=device))
 
@@ -210,10 +254,11 @@ def train_model(
         weight_decay=weight_decay,
         data_collator=data_collator,
         model_save_path=os.path.join(
-            output_dir, f"{model_name}-finetuned", "best_model.pt"
+            output_dir, f"{model_name}-finetuned", f"{model_name}_best_model.pt"
         ),
         device=device,
         early_stopping_patience=early_stopping_patience,
+        few_shot_learning=few_shot_learning,
     )
     data_args = DataArguments(
         datasets=datasets,
@@ -258,7 +303,7 @@ def train_model(
 if __name__ == "__main__":
     debug = False
     logging.basicConfig(level=logging.INFO)
-    logging.getLogger("datasets.arrow_dataset").setLevel(logging.ERROR)
+    logging.getLogger("datasets").setLevel(logging.ERROR)
     if debug:
         logger.getChild("question_answering.DatasetCharacterBasedTokenizer").setLevel(
             logging.DEBUG
@@ -268,7 +313,6 @@ if __name__ == "__main__":
         description="Parser for training and data arguments"
     )
 
-    # TODO: add help field
     parser.add_argument(
         "--model_name",
         type=str,
@@ -286,16 +330,55 @@ if __name__ == "__main__":
         ],
         required=True,
     )
-    parser.add_argument("--learning_rate", type=float, required=True)
-    parser.add_argument("--weight_decay", type=float, required=True)
-    parser.add_argument("--type_lr_scheduler", type=str, required=True)
-    parser.add_argument("--warmup_ratio", type=float, required=True)
-    parser.add_argument("--save_strategy", type=str, required=True)
-    parser.add_argument("--save_steps", type=int, required=True)
-    parser.add_argument("--num_epochs", type=int, required=True)
-    parser.add_argument("--early_stopping_patience", type=int, required=True)
-    parser.add_argument("--output_dir", type=str, required=True)
-    parser.add_argument("--device", type=str, required=True)
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        required=True,
+        help="Chosen learning rate for AdamW optimizer",
+    )
+    parser.add_argument(
+        "--weight_decay",
+        type=float,
+        required=True,
+        help="Chosen weight decay for AdamW optimizer",
+    )
+    parser.add_argument(
+        "--type_lr_scheduler", type=str, required=True, help="Type of LR scheduler"
+    )
+    parser.add_argument(
+        "--warmup_ratio", type=float, required=True, help="Warmup ratio"
+    )
+    parser.add_argument(
+        "--save_strategy",
+        type=str,
+        required=True,
+        help="Save strategy",
+        choices=["steps", "epochs"],
+    )
+    parser.add_argument(
+        "--save_steps",
+        type=int,
+        required=True,
+        help="Number of steps to perform before saving model",
+    )
+    parser.add_argument(
+        "--num_epochs", type=int, required=True, help="Number of epochs to train for"
+    )
+    parser.add_argument(
+        "--early_stopping_patience",
+        type=int,
+        required=True,
+        help="Patience for early stopping, validation loss is monitored",
+    )
+    parser.add_argument(
+        "--output_dir", type=str, required=True, help="Directory to store the model"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        required=True,
+        help="Device to run the code on, either cpu or cuda",
+    )
     parser.add_argument(
         "--dataset_name",
         type=str,
@@ -305,23 +388,67 @@ if __name__ == "__main__":
             SQUAD_DATASET_NAME,
             XQUAD_DATASET_NAME,
             NOISY_DATASET_NAME,
+            DYNABENCH_DATASET_NAME,
+            CUAD_DATASET_NAME,
         ],
         required=True,
+        help="Name of the dataset to train/evaluate on",
     )
-    parser.add_argument("--xsquad_subdataset_name", type=str, default="xquad.en")
-    parser.add_argument("--batch_size", type=int, required=True)
-    parser.add_argument("--max_length", type=int, required=True)
-    parser.add_argument("--doc_stride", type=int, required=True)
-    parser.add_argument("--n_best_size", type=int, required=True)
-    parser.add_argument("--max_answer_length", type=int, required=True)
-    parser.add_argument("--squad_v2", type=bool, required=True)
+    parser.add_argument(
+        "--xquad_subdataset_name",
+        type=str,
+        default="xquad.en",
+        help="Config name for XQuAD dataset",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        required=True,
+        help="Batch size for training and evaluation",
+    )
+    parser.add_argument(
+        "--max_length",
+        type=int,
+        required=True,
+        help="The maximum length of a feature (question and context)",
+    )
+    parser.add_argument(
+        "--doc_stride",
+        type=int,
+        required=True,
+        help="The authorized overlap between two part of the context when splitting it is needed.",
+    )
+    parser.add_argument(
+        "--n_best_size",
+        type=int,
+        required=True,
+        help="Number of best logits scores to consider",
+    )
+    parser.add_argument(
+        "--max_answer_length",
+        type=int,
+        required=True,
+        help="Maximum length of an answer",
+    )
+    parser.add_argument("--squad_v2", type=bool, default=False)
     parser.add_argument("--eval_only", type=bool, default=False)
-    parser.add_argument("--path_to_finetuned_model", type=str, default=None)
+    parser.add_argument(
+        "--path_to_finetuned_model",
+        type=str,
+        default=None,
+        help="Path towards a previously finetuned model",
+    )
     parser.add_argument(
         "--dir_data_noisy",
         type=str,
         default=None,
-        help="Path towards noisy datan will be used only if `dataset_name` is set to noisy",
+        help="Path towards noisy data will be used only if `dataset_name` is set to noisy",
+    )
+    parser.add_argument(
+        "--few_shot_learning",
+        type=bool,
+        default=False,
+        help="Set to True to do few-shot learning",
     )
 
     args = parser.parse_args()
@@ -348,5 +475,6 @@ if __name__ == "__main__":
         eval_only=args.eval_only,
         path_to_finetuned_model=args.path_to_finetuned_model,
         dir_data_noisy=args.dir_data_noisy,
-        xsquad_subdataset_name=args.xsquad_subdataset_name
+        xquad_subdataset_name=args.xquad_subdataset_name,
+        few_shot_learning=args.few_shot_learning,
     )

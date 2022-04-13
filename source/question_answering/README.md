@@ -6,8 +6,8 @@ more sense.
 
 ## Organization
 
-This subfolder contains the whole code associated with the Question Answering experiments. It has been developed by Chloé 
-Sekkat and can be viewed as a Python package whose main functions/classes can be found in the ``__init__.py``.
+This subfolder contains the whole code associated with the Question Answering experiments. It can be viewed as a Python 
+package whose main functions/classes can be found in the ``__init__.py``.
 
 ## Task description
 
@@ -23,13 +23,8 @@ robustness to noise of such system is imperative. It is highly probable that in 
 Recognition system (ASR) or the human typing the question actually do not produce qualitative text in the sense that the 
 written-translation might be flawed (typos, misspellings, grammatical errors, etc). 
 
-The last step is not trutly focused on data2vec but rather on multi-lingual models and their capacities of generalization 
-in the context of zero-shot transfer. We decided to include this experiment on zero-shot transfer on a multi-lingual 
-dataset here even if it is biased because it allows to compare models pre-trained on multilingual data and that we are 
-interested by the zero-shot transfer task. Models are finetuned on an English dataset and then directly evaluated on a 
-multi-lingual dataset with 11 languages of various morphologies (XQuAD). Intuitively, only the models trained on 
-multilingual data will be able to generalize. Therefore this experience will only allow us to compare mBERT, XLM-RoBERTa 
-and CANINE. For the sake of completeness we will nonetheless add the scores obtained by data2vec, BERT, DistilBERT and RoBERTa. 
+The last step is to do few-shot learning to test the domain adaptation capacities of data2vec compared to the one of 
+previously cited models.
 
 ## Structure
 
