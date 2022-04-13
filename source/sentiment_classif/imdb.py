@@ -40,7 +40,7 @@ class ImdbReviews(Dataset_):
         train_ratio, validation_ratio, test_ratio = self.split_ratios
         x_train, x_test, y_train, y_test = train_test_split(self.X, self.y, test_size=1 - train_ratio)
         x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=test_ratio/(test_ratio + validation_ratio)) 
-        return (x_train, y_train, x_test, y_test, x_val, y_val)
+        return (x_train.to_numpy(), y_train.to_numpy(), x_test.to_numpy(), y_test.to_numpy(), x_val.to_numpy(), y_val.to_numpy())
 
     @staticmethod
     def get_data():
