@@ -264,79 +264,38 @@ class Trainer:
     def train(self, evaluation=False):
         print("Start training...\n")
         for epoch_i in range(self.epochs):
-            # =======================================
-            #               Training
-            # =======================================
-            # Print the header of the result table
             print(f"{'Epoch':^7} | {'Batch':^7} | {'Train Loss':^12} | {'Val Loss':^10} | {'Val Acc':^9} | {'Elapsed':^9}")
             print("-" * 70)
-
-            # Measure the elapsed time of each epoch
             t0_epoch, t0_batch = time.time(), time.time()
-
-            # Reset tracking variables at the beginning of each epoch
             total_loss, batch_loss, batch_counts = 0, 0, 0
-
-            # Put the model into the training mode
             self.model.train()
-
-            # For each batch of training data...
             for step, batch in enumerate(self.train_dataloader):
                 batch_counts += 1
-                # Load batch to GPU
                 b_input_ids, b_attn_mask, b_labels = tuple(t.to(self.device) for t in batch)
-
-                # Zero out any previously calculated gradients
                 self.model.zero_grad()
-
-                # Perform a forward pass. This will return logits.
                 logits = self.model(b_input_ids, b_attn_mask)
-
-                # Compute loss and accumulate the loss values
                 loss = self.loss_fn(logits, b_labels)
                 batch_loss += loss.item()
                 total_loss += loss.item()
-
-                # Perform a backward pass to calculate gradients
                 loss.backward()
-
-                # Clip the norm of the gradients to 1.0 to prevent "exploding gradients"
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-
-                # Update parameters and the learning rate
                 self.optimizer.step()
                 self.scheduler.step()
 
-                # Print the loss values and time elapsed for every 20 batches
                 if (step % 20 == 0 and step != 0) or (step == len(self.train_dataloader) - 1):
-                    # Calculate time elapsed for 20 batches
                     time_elapsed = time.time() - t0_batch
+                    print(f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {'-':^10} | {'-':^9} | {time_elapsed:^9.2f}")
 
-                    # Print training results
-                    print(
-                        f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {'-':^10} | {'-':^9} | {time_elapsed:^9.2f}")
-
-                    # Reset batch tracking variables
                     batch_loss, batch_counts = 0, 0
                     t0_batch = time.time()
 
-            # Calculate the average loss over the entire training data
             avg_train_loss = total_loss / len(self.train_dataloader)
 
             print("-" * 70)
-            # =======================================
-            #               Evaluation
-            # =======================================
             if evaluation == True:
-                # After the completion of each training epoch, measure the model's performance
-                # on our validation set.
                 val_loss, val_accuracy = self.evaluate()
-
-                # Print performance over the entire training data
                 time_elapsed = time.time() - t0_epoch
-
-                print(
-                    f"{epoch_i + 1:^7} | {'-':^7} | {avg_train_loss:^12.6f} | {val_loss:^10.6f} | {val_accuracy:^9.2f} | {time_elapsed:^9.2f}")
+                print(f"{epoch_i + 1:^7} | {'-':^7} | {avg_train_loss:^12.6f} | {val_loss:^10.6f} | {val_accuracy:^9.2f} | {time_elapsed:^9.2f}")
                 print("-" * 70)
             print("\n")
 
@@ -399,15 +358,15 @@ class Trainer:
 
 if __name__ == '__main__':
 
-    # if torch.cuda.is_available():
-    #     device = torch.device("cuda")
-    #     print("Using GPU")
-    # else:
-    #     print('No GPU available, using the CPU instead.')
-    #     device = torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("Using GPU")
+    else:
+        print('No GPU available, using the CPU instead.')
+        device = torch.device("cpu")
 
     dataset = AirlineComplaints()
-    # model = Data2VecClassifier()
-    # dataset.tokenize_all(model.tokenizer)
-    # trainer = Trainer(model, dataset, device=device)
-    # trainer.train(evaluation=True)
+    model = Data2VecClassifier()
+    dataset.tokenize_all(model.tokenizer)
+    trainer = Trainer(model, dataset, device=device)
+    trainer.train(evaluation=True)
