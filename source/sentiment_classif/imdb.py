@@ -4,6 +4,8 @@ import zipfile
 import pandas as pd
 import tarfile
 from pathlib import Path
+from main import Dataset_
+from sklearn.model_selection import train_test_split
 
 class ImdbReviews(Dataset_):
     def __init__(self, split_ratios=(0.75, 0.15, 0.10), batch_size=32, max_len=200):

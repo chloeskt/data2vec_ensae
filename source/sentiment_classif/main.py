@@ -16,20 +16,9 @@ from sklearn.metrics import accuracy_score, roc_curve, auc
 import matplotlib.pyplot as plt
 
 class Dataset_:
-    def __init__(self, test_size=0.1, batch_size=32, max_len=175):
-        self.url = 'https://drive.google.com/uc?export=download&id=1wHt8PsMLsfX5yNSqrt2fSTcb8LEiclcf'
-        self.download()
-        self.unzip()
-        self.format()
-        self.X = self.data.tweet.values
-        self.y = self.data.label.values
-        self.X_train, self.X_val, self.y_train, self.y_val = \
-            train_test_split(self.X, self.y, test_size=test_size, random_state=42)
-        self.train_labels = torch.tensor(self.y_train)
-        self.val_labels = torch.tensor(self.y_val)
-        self.batch_size = batch_size
-        self.max_len = max_len
-        self.X_test = self.test.tweet
+    def __init__(self):
+        self.data = pd.DataFrame()
+        self.test = pd.DataFrame()
 
     def download(self):
         pass
@@ -150,9 +139,6 @@ class AirlineComplaints(Dataset_):
 
     def __len__(self):
         return len(self.data)
-
-    def __get__(self):
-        return self.data
 
     def tokenization(self, data, tokenizer):
         preprocessing = dataset.preprocessing
