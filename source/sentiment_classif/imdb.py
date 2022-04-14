@@ -44,9 +44,10 @@ class ImdbReviews(Dataset_):
 
     @staticmethod
     def get_data():
-        zip_file = Path('imdb.zip')
-        data_dir = Path('./imdb')
-        data_file = Path('imdb.csv')
+        src_dir = Path('source/sentiment_classif')
+        zip_file = src_dir/Path('imdb.zip')
+        data_dir = src_dir/Path('./imdb')
+        data_file = src_dir/Path('imdb.csv')
 
         if not zip_file.is_file() and not data_file.is_file():
             raise Exception("Dataset not uploaded")
