@@ -4,7 +4,7 @@ import zipfile
 import pandas as pd
 import tarfile
 from pathlib import Path
-from main import Dataset_
+from source.sentiment_classif.main import Dataset_
 from sklearn.model_selection import train_test_split
 import torch
 import pandas as pd
