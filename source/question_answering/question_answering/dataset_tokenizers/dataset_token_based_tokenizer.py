@@ -5,11 +5,11 @@ from transformers import PreTrainedTokenizer, BatchEncoding
 # noinspection DuplicatedCode
 class DatasetTokenBasedTokenizer:
     def __init__(
-            self,
-            tokenizer: PreTrainedTokenizer,
-            max_length: int,
-            doc_stride: int,
-            train: bool,
+        self,
+        tokenizer: PreTrainedTokenizer,
+        max_length: int,
+        doc_stride: int,
+        train: bool,
     ):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -78,7 +78,7 @@ class DatasetTokenBasedTokenizer:
                 # Start token index of the current span in the text.
                 token_start_index = 0
                 while sequence_ids[token_start_index] != (
-                        1 if self.pad_on_right else 0
+                    1 if self.pad_on_right else 0
                 ):
                     token_start_index += 1
 
@@ -89,8 +89,8 @@ class DatasetTokenBasedTokenizer:
 
                 # Detect if the answer is out of the span (in which case this feature is labeled with the CLS index).
                 if not (
-                        offsets[token_start_index][0] <= start_char
-                        and offsets[token_end_index][1] >= end_char
+                    offsets[token_start_index][0] <= start_char
+                    and offsets[token_end_index][1] >= end_char
                 ):
                     tokenized_examples["start_positions"].append(cls_index)
                     tokenized_examples["end_positions"].append(cls_index)
@@ -98,8 +98,8 @@ class DatasetTokenBasedTokenizer:
                     # Otherwise move the token_start_index and token_end_index to the two ends of the answer.
                     # Note: we could go after the last offset if the answer is the last word (edge case).
                     while (
-                            token_start_index < len(offsets)
-                            and offsets[token_start_index][0] <= start_char
+                        token_start_index < len(offsets)
+                        and offsets[token_start_index][0] <= start_char
                     ):
                         token_start_index += 1
                     tokenized_examples["start_positions"].append(token_start_index - 1)
