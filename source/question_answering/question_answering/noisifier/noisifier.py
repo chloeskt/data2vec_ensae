@@ -36,7 +36,7 @@ class NoisifierArguments:
         default=None,
         metadata={
             "help": "Type of Augmenter to use. Either: KeyboardAug, RandomCharAug, SpellingAug, BackTranslationAug "
-                    "(de/en) or OcrAug"
+            "(de/en) or OcrAug"
         },
     )
     action: str = field(
@@ -48,7 +48,7 @@ class NoisifierArguments:
 
     def __post_init__(self) -> None:
         if (self.augmenter_type == "RandomCharAug" and self.action is None) or (
-                self.action is not None and self.augmenter_type != "RandomCharAug"
+            self.action is not None and self.augmenter_type != "RandomCharAug"
         ):
             raise ValueError(
                 "If you set `augmenter_type` to RandomCharAug, please choose an `action`."
@@ -59,11 +59,11 @@ class NoisifierArguments:
 
 class Noisifier:
     def __init__(
-            self,
-            datasets: datasets.dataset_dict.DatasetDict,
-            level: float,
-            type: str,
-            action: Optional[str],
+        self,
+        datasets: datasets.dataset_dict.DatasetDict,
+        level: float,
+        type: str,
+        action: Optional[str],
     ) -> None:
         self.datasets = datasets
         self.level = level
@@ -93,7 +93,7 @@ class Noisifier:
             raise NotImplementedError
 
     def _augment_question(
-            self, row: datasets.arrow_dataset.Example
+        self, row: datasets.arrow_dataset.Example
     ) -> datasets.arrow_dataset.Example:
         # Noise can only be applied to the question
         augmenter = self._get_augmenter()
@@ -103,25 +103,25 @@ class Noisifier:
 
     def augment(self):
         if (
-                "validation" in self.datasets.column_names
-                and "train" not in self.datasets.column_names
+            "validation" in self.datasets.column_names
+            and "train" not in self.datasets.column_names
         ):
             self.datasets["validation"] = self.datasets["validation"].map(
                 self._augment_question
             )
         elif (
-                "train" in self.datasets.column_names
-                and "validation" in self.datasets.column_names
+            "train" in self.datasets.column_names
+            and "validation" in self.datasets.column_names
         ):
             self.datasets["train"] = self.datasets["train"].map(self._augment_question)
             self.datasets["validation"] = self.datasets["validation"].map(
                 self._augment_question
             )
         elif (
-                "id"
-                and "context"
-                and "question"
-                and "answers" in self.datasets.column_names
+            "id"
+            and "context"
+            and "question"
+            and "answers" in self.datasets.column_names
         ):
             self.datasets = self.datasets.map(self._augment_question)
         else:

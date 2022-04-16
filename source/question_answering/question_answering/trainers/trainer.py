@@ -45,6 +45,7 @@ class TrainerArguments:
     model_save_path: str
     device: str
     early_stopping_patience: int
+    few_shot_learning: bool
 
 
 @dataclass
@@ -54,6 +55,7 @@ class DataArguments:
     """
 
     datasets: DatasetDict
+    dataset_name: str
     validation_features: Dataset
     batch_size: int
     tokenizer: PreTrainedTokenizer
@@ -98,18 +100,28 @@ class CustomTrainer(ABC):
         )
 
         # Initiate Hugging Face Trainer
-        self.trainer = Trainer(
-            self.trainer_args.model,
-            args,
-            train_dataset=self.data_args.tokenized_datasets["train"],
-            eval_dataset=self.data_args.tokenized_datasets["validation"],
-            data_collator=self.trainer_args.data_collator,
-            tokenizer=self.data_args.tokenizer,
-            callbacks=[
+        if self.data_args.dataset_name == "xquad":
+            train_dataset = self.data_args.tokenized_datasets["validation"]
+        else:
+            train_dataset = self.data_args.tokenized_datasets["train"]
+
+        if self.trainer_args.few_shot_learning:
+            callbacks = None
+        else:
+            callbacks = [
                 EarlyStoppingCallback(
                     early_stopping_patience=self.trainer_args.early_stopping_patience
                 )
-            ],
+            ]
+
+        self.trainer = Trainer(
+            self.trainer_args.model,
+            args,
+            train_dataset=train_dataset,
+            eval_dataset=self.data_args.tokenized_datasets["validation"],
+            data_collator=self.trainer_args.data_collator,
+            tokenizer=self.data_args.tokenizer,
+            callbacks=callbacks,
         )
 
     @abstractmethod
