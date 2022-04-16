@@ -105,14 +105,14 @@ class CustomTrainer(ABC):
         else:
             train_dataset = self.data_args.tokenized_datasets["train"]
 
-        # if self.trainer_args.few_shot_learning:
-        #     callbacks = None
-        # else:
-        callbacks = [
-            EarlyStoppingCallback(
-                early_stopping_patience=self.trainer_args.early_stopping_patience
-            )
-        ]
+        if self.trainer_args.few_shot_learning:
+            callbacks = None
+        else:
+            callbacks = [
+                EarlyStoppingCallback(
+                    early_stopping_patience=self.trainer_args.early_stopping_patience
+                )
+            ]
 
         self.trainer = Trainer(
             self.trainer_args.model,
