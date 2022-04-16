@@ -9,50 +9,28 @@ this domain.
 
 # Motivation and goals
 
-NB: we considered two tasks in the end due to time and hardware/compute constraints.
+Self-supervised learning is motivated by the goal of making use of large amount of unlabeled data and uncover their 
+underlying structure. It is inspired by the way humans learn, namely, observation. A large part of what we learn as human 
+come from us observing the world around us; not only the visual world but also sounds and language. We are constantly 
+evolving thanks to our observations: there are key concepts in each objects/word/sound that we are able to grasp, 
+experience on and then act on. It is our perception of the world and the associated common sense that allow humans to 
+learn these basic concepts. These concepts are the building blocks of how humans learn and help us learn faster 
+(think of a baby learning what "mommy" or "daddy" means).
 
-## Problem definition 
+On the opposite side, deep learning algorithms need a lot of examples and hours of training before being able to associate 
+a phoneme to its written form. The goal of self-supervised learning is to design algorithms able to mimic this human 
+common sense. A lot of research has been done in this field over the last 5 years, given rise to models such as BERT 
+in NLP or BeiT in Computer Vision; models building on Transformers and self-attention.
 
-One challenge of self-supervised learning is that all developed methods are unimodal. This means that each scheme is 
-task-specific, e.g. Masked Language Model for NLP, learning representations invariant to data augmentation in Computer 
-Vision. Consequently, attached to each task, are biased in their own way. [Baevski et al.](https://arxiv.org/abs/2202.03555) 
-are motivated by the core idea that humans use similar processes to interacted and understand the visual world, language 
-and sound. Is it possible to design an algorithm inspired by such processes ? An algorithm that can learn a contextualized 
-latent representations instead of modality-specific representations. Concretely, the learning objective in _data2vec_ is 
-the same across all modalities: masked learning to produce latent target _continuous and contextualized representations_, 
-using a teacher-student architecture training scheme.
-
-## Models
-
-First, we will make sure to understand how _data2vec_ work and differ from other self-supervised models in NLP and 
-Computer Vision. Then, the \textsc{data2vec} will be compared against SOTA models such as BERT or RoBERTa in NLP, and 
-ViT in Computer Vision on a various set of downstream tasks. Results provided by the paper suggest that _data2vec_ 
-overperforms such models. It would be nice (if pre-trained models are available) is to compare _data2vec_ with DINO 
-since both of them use the teacher-student architecture but differ in the prediction task. 
-
-Please note that currently pretrained models for Computer Vision are **not** [available](https://github.com/pytorch/fairseq/tree/main/examples/data2vec). 
-Depending on when FAIR will make one available, we might **not** be able to evaluate data2vec on downstream Computer Vision 
-tasks. Moreover, note that currently fine-runed pre-trained models on NLP tasks are **not** available, which means that 
-we will fine-tune ourselves the base model. This will allow us to get a better understanding on how to fine-tune such 
-models and will make us dive into the source code. However this also implies that we shall make experiments in low budget
-computational settings as we do not have access to huge clusters as FAIR does.
-
-## Datasets
-
-- Computer Vision: as we will try to first reproduce the paper's results, we will use the well-known benchmark ImageNet, 
-on the downstream tasks of image classification. Other tasks might be considered such as image captioning using the [COCO 
-(Common Objects in Context) dataset](https://cocodataset.org/).
-- Natural Language Processing: in order to reproduce the paper's results, we shall fine-tune the model on the GLUe benchmark. 
-Note that **not all tasks might be considered** e.g. we might consider only Question Answering (SQUAD), Natural Language Inference 
-(MNLI) and Sentiment Analysis (SST-2). One interesting thing would be to evaluate data2vec performances on multi-lingual 
-Question Answering for instance (using XQUAD in zero-shot transfer).
-
-## Evaluation
-
-For image classification we will focus on top-1 validation accuracy on ImageNet-1K as it is a standard benchmark. 
-For NLP, depending on the downstream task we will look at the **F1-score (Question Answering)**, accuracy on both the matched 
-and unmatched dev sets (Natural Language Inference) and the unweighted average of Pearson and Spearman correlation or 
-accuracy (Sentiment Analysis). 
+However one challenge of self-supervised learning is that all developed methods are unimodal. This means that each training 
+scheme/design is task-specific. For instance, there is masked language modeling for NLP and learning representations 
+invariant to data augmentation in Computer Vision. Consequently, by the choice of these designs, biases are incorporated 
+in each model and there is no unified way of learning. However if we think about how humans learn, we use similar 
+processes for everything. This is one of the core motivation of Baevski et al. They would like to design an algorithm 
+that would not be modality-specific i.e. that would benefit from cross-modal representations. They present data2vec as 
+an algorithm that can learn contextualized latent representations instead of modality-specific representations. 
+Concretely, the learning objective in data2vec is the same across all modalities: masked learning to produce latent 
+target **continuous and contextualized representations**, using a teacher-student architecture training scheme.
 
 # Installation 
 
@@ -65,13 +43,22 @@ In the end due to time and hardware/compute constraints, we considered two mains
 - question answering (F1 score \& Exact match)
 - sentiment analysis ()
 
+For more information, please refer to the corresponding `README.md` (in `source/question_answering` and `source/sentiment_classif`).
+
 ```
 dl_ensae
 ├── .gitignore                  
 ├── Project_proposal            # Our project proposal
-├── Final_report                # Out final report
+├── Final_report                # Our final report
 ├── source                      # Source code main package   
     ├── question_answering/     # Question answering related source code                         
     └── sentiment_classif/      # Sentiment classification related source code  
 └── README.md
 ```
+
+# Colab links:
+
+For each task we developed colab notebooks that can be viewed in parallel to the source code:
+
+- [Question Answering notebook](https://colab.research.google.com/drive/1qzDdyZ6qsNxdSMyxlCIuKqjB7FdPDw3Y?usp=sharing)
+- [Sentiment Classification notebook]()
