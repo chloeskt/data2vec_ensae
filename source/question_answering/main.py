@@ -1,11 +1,9 @@
 import argparse
 import logging
 import os
-import random
 
 import datasets as data
 import torch
-import transformers
 from datasets import Dataset, load_dataset, load_metric, load_from_disk
 from tqdm import tqdm
 
@@ -291,7 +289,6 @@ if __name__ == "__main__":
             BERT_MODEL,
             CANINE_S_MODEL,
             CANINE_C_MODEL,
-            DATA2VEC_MODEL,
             ROBERTA_MODEL,
             XLM_ROBERTA_MODEL,
             DISTILBERT_MODEL,
