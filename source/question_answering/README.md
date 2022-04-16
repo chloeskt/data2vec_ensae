@@ -15,8 +15,8 @@ In this section, we are interested by the capacities of the embeddings produced 
 on extractive Question Answering (select minimal span answer within a context) on SQuADv2 dataset. The latter is
 a unilingual (English) dataset. The two main metrics used are the F1 score and the Exact Match (EM) score. The obtained
 F1-scores are being compared to BERT-like models (BERT, DistilBERT, XLM-RoBERTa and mBERT) and CANINE. Note that mBERT, 
-XLM-RoBERTa and CANINE were pre-trained on multilingual data. \textbf{Therefore data2vec is only directly comparable to 
-BERT and RoBERTa, but it is still interesting to get the performances on other models on the same task.}
+XLM-RoBERTa and CANINE were pre-trained on multilingual data. **Therefore data2vec is only directly comparable to 
+BERT and RoBERTa, but it is still interesting to get the performances on other models on the same task.**
 
 A second step of our analysis is to assess data2vec abilities to handle noisy inputs, especially noisy questions. The 
 robustness to noise of such system is imperative. It is highly probable that in real life settings, the Automatic Speech 
@@ -105,7 +105,8 @@ python3 main.py \
     --n_best_size 20 \
     --max_answer_length 30 \
     --squad_v2 True \
-    
+```
+```bash
 # To train CANINE-S on SQuADv2 (example)
 python3 main.py \
     --model_name canine-s \
