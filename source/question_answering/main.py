@@ -86,6 +86,8 @@ def train_model(
     dir_data_noisy: str,
     xquad_subdataset_name: str,
     few_shot_learning: bool,
+    path_to_custom_cuad: str,
+    path_to_custom_dynabench: str,
 ) -> None:
     logger.info(f"Loading dataset {dataset_name}")
     if dataset_name == XQUAD_DATASET_NAME:
@@ -93,20 +95,15 @@ def train_model(
     elif dataset_name == NOISY_DATASET_NAME:
         datasets = load_from_disk(dir_data_noisy)
     elif dataset_name == DYNABENCH_DATASET_NAME:
-        datasets = load_dataset(dataset_name, "dynabench.qa.r1.dbert")
-        datasets.pop("test")
+        datasets = data.load_from_disk(path_to_custom_dynabench)
     elif dataset_name == CUAD_DATASET_NAME:
-        datasets = load_dataset(dataset_name)
-        datasets["validation"] = datasets["test"]
-        datasets.pop("test")
+        datasets = data.load_from_disk(path_to_custom_cuad)
     else:
         datasets = load_dataset(dataset_name)
 
     logger.info("Adding end_answers to each question")
     preprocessor = Preprocessor(datasets)
     datasets = preprocessor.preprocess()
-
-    print(datasets)
 
     logger.info(f"Preparing for model {model_name}")
     if model_name in [CANINE_C_MODEL, CANINE_S_MODEL]:
@@ -126,18 +123,6 @@ def train_model(
         datasets["validation"] = Dataset.from_pandas(df_validation)
 
         del df_train, df_validation
-
-        print(datasets)
-
-        if few_shot_learning:
-            logger.info("Selecting 1% of the train dataset, keeping only these to train")
-            total_len = datasets["train"].num_rows
-            indices = [x for x in range(total_len)]
-            random_indices = random.sample(indices, 224)
-            datasets["train"] = datasets["train"].select(random_indices)
-
-        datasets.save_to_disk("/content/drive/MyDrive/models/cuad")
-        print(datasets)
 
         pretrained_model_name = f"google/{model_name}"
         tokenizer = CanineTokenizer.from_pretrained(pretrained_model_name)
@@ -196,23 +181,6 @@ def train_model(
 
         else:
             raise NotImplementedError
-
-        # if few_shot_learning:
-        #     logger.info("Selecting 1% of the train dataset, keeping only these to train")
-        #     total_len = datasets["train"].num_rows
-        #     indices = [x for x in range(total_len)]
-        #     keep = int(total_len * 0.01)
-        #     random_indices = random.sample(indices, keep)
-        #     datasets["train"] = datasets["train"].select(random_indices)
-        #
-        #     if dataset_name == CUAD_DATASET_NAME:
-        #         total_len = datasets["validation"].num_rows
-        #         indices = [x for x in range(total_len)]
-        #         keep = int(total_len * 0.3)
-        #         random_indices = random.sample(indices, keep)
-        #         datasets["validation"] = datasets["validation"].select(random_indices)
-
-        print(datasets)
 
         tokenizer_dataset_train = DatasetTokenBasedTokenizer(
             tokenizer, max_length, doc_stride, train=True
@@ -450,6 +418,12 @@ if __name__ == "__main__":
         default=False,
         help="Set to True to do few-shot learning",
     )
+    parser.add_argument(
+        "--path_to_custom_cuad",
+        type=str,
+        help="Path to custom CUAD dataset, made for few-shot learning",
+    )
+    parser.add_argument("--path_to_custom_dynabench", type=str, help="")
 
     args = parser.parse_args()
 
@@ -477,4 +451,6 @@ if __name__ == "__main__":
         dir_data_noisy=args.dir_data_noisy,
         xquad_subdataset_name=args.xquad_subdataset_name,
         few_shot_learning=args.few_shot_learning,
+        path_to_custom_cuad=args.path_to_custom_cuad,
+        path_to_custom_dynabench=args.path_to_custom_dynabench,
     )
