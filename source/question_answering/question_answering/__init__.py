@@ -10,6 +10,7 @@ from .models import (
     MBertQA,
     RobertaQA,
     XlmRobertaQA,
+    Model,
 )
 from .noisifier import NoisifierArguments, Noisifier
 from .processing import Preprocessor, QADataset
@@ -19,4 +20,9 @@ from .trainers import (
     TokenBasedModelTrainer,
     CharacterBasedModelTrainer,
 )
-from .utils import to_pandas, set_seed, remove_examples_longer_than_threshold
+from .utils import (
+    to_pandas,
+    set_seed,
+    remove_examples_longer_than_threshold,
+    remove_answer_end,
+)
