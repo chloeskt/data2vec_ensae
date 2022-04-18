@@ -230,7 +230,7 @@ class BertClassifier(nn.Module):
 
 class Trainer:
     # Specify loss function
-    def __init__(self, model, dataset, device=torch.device("cuda"), epochs=4):
+    def __init__(self, model, dataset, device=torch.device("cpu"), epochs=4):
         self.set_seed()
         self.loss_fn = nn.CrossEntropyLoss()
         self.model = model
@@ -351,8 +351,7 @@ class Trainer:
 
 # ========================================================================
 
-if __name__ == '__main__':
-
+def main():
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print("Using GPU")

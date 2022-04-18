@@ -26,10 +26,10 @@ import matplotlib.pyplot as plt
 class ImdbReviews(Dataset_):
     def __init__(self, split_ratios=(0.75, 0.15, 0.10), batch_size=32, max_len=200):
         self.split_ratios = split_ratios
-        self.dataset = self.get_data()
+        self.data = self.get_data()
         self.format()
-        self.X = self.dataset.X
-        self.y = self.dataset.y
+        self.X = self.data.X
+        self.y = self.data.y
         self.X_train, self.y_train, self.X_test, self.y_test, self.X_val, self.y_val = self.split()
         self.batch_size = batch_size
         self.max_len = max_len
@@ -44,6 +44,7 @@ class ImdbReviews(Dataset_):
 
     @staticmethod
     def get_data():
+        print("Getting Dataset ...")
         src_dir = Path('source/sentiment_classif')
         zip_file = src_dir/Path('imdb.zip')
         data_dir = src_dir/Path('./imdb')
@@ -63,8 +64,13 @@ class ImdbReviews(Dataset_):
         return (pd.read_csv(data_file))
 
     def format(self):
-        self.dataset = self.dataset.rename(columns={'review': 'X', 'sentiment': 'y'})
-        self.dataset.y = self.dataset.y.map({'negative': 0, 'positive' :1})
+        self.data = self.data.rename(columns={'review': 'X', 'sentiment': 'y'})
+        self.data.y = self.data.y.map({'negative': 0, 'positive' :1})
+
+    def preprocessing(self, text):
+        text = re.sub(r'\s+', ' ', text).strip()  # Remove trailing whitespaces
+        test = re.sub(r'<[^>]+>', ' ', text) # Remove html tagsh
+        return (text)
 
     def sample(self):
         self.data.sample(5)
