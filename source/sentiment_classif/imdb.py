@@ -61,7 +61,7 @@ class ImdbReviews(Dataset_):
             os.rmdir(data_dir)
         if zip_file.is_file():
             os.remove(zip_file)
-        return (pd.read_csv(data_file))
+        return (pd.read_csv(data_file).sample(10000))
 
     def format(self):
         self.data = self.data.rename(columns={'review': 'X', 'sentiment': 'y'})
