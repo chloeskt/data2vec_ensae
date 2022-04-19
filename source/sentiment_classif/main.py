@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 class Data2VecClassifier(nn.Module):
-    def __init__(self):
+    def __init__(self, weights=None):
         super(Data2VecClassifier, self).__init__()
         D_in, H, D_out = 768, 50, 2
 
@@ -30,6 +30,8 @@ class Data2VecClassifier(nn.Module):
             # nn.Dropout(0.5),
             nn.Linear(H, D_out)
         )
+        if weights is not None:
+            self.load_state_dict(weights)
 
     def forward(self, input_ids, attention_mask):
         outputs = self.model(input_ids=input_ids,
@@ -43,7 +45,7 @@ class Data2VecClassifier(nn.Module):
 
 class BertClassifier(nn.Module):
 
-    def __init__(self):
+    def __init__(self, weights=None):
         super(BertClassifier, self).__init__()
         D_in, H, D_out = 768, 50, 2
 
@@ -56,6 +58,8 @@ class BertClassifier(nn.Module):
             # nn.Dropout(0.5),
             nn.Linear(H, D_out)
         )
+        if weights is not None:
+            self.load_state_dict(weights)
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids,
