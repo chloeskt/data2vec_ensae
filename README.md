@@ -61,4 +61,4 @@ dl_ensae
 For each task we developed colab notebooks that can be viewed in parallel to the source code:
 
 - <a href="https://colab.research.google.com/drive/1qzDdyZ6qsNxdSMyxlCIuKqjB7FdPDw3Y?usp=sharing" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> for Question Answering
-- ...
+- <a href="https://colab.research.google.com/drive/1FzfdDTDuQaMWe1dx2KBwcYH18wmUk-PD?usp=sharing" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> for Sentiment Analysis
