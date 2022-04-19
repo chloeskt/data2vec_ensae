@@ -7,6 +7,7 @@ import time
 import torch.nn.functional as F
 from transformers import AdamW, get_linear_schedule_with_warmup
 from source.sentiment_classif.datasets import AirlineComplaints
+from source.sentiment_classif.utils import EarlyStopper
 
 # ========================================================================
 
@@ -75,6 +76,7 @@ class Trainer:
         self.model.to(self.device)
         self.dataset = dataset
         self.epochs = epochs
+        self.early_stopper = EarlyStopper()
         self.optimizer = AdamW(model.parameters(),
                                lr=5e-5,  # Default learning rate
                                eps=1e-8  # Default epsilon value
@@ -118,9 +120,14 @@ class Trainer:
 
                 if (step % 20 == 0 and step != 0) or (step == len(self.train_dataloader) - 1):
                     time_elapsed = time.time() - t0_batch
+                    val_loss, val_accuracy = self.evaluate()
+                    # print(
+                    #     f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {'-':^10} | {'-':^9} | {time_elapsed:^9.2f}")
                     print(
-                        f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {'-':^10} | {'-':^9} | {time_elapsed:^9.2f}")
-
+                        f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {val_loss:^10.6f} | {val_accuracy:^9.2f} | {time_elapsed:^9.2f}")
+                    self.early_stopper(val_loss)
+                    if self.early_stopper.early_stop:
+                        break
                     batch_loss, batch_counts = 0, 0
                     t0_batch = time.time()
 
