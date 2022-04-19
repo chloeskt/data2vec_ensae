@@ -6,7 +6,7 @@ import random
 import time
 import torch.nn.functional as F
 from transformers import AdamW, get_linear_schedule_with_warmup
-from source.sentiment_classif.datasets import AirlineComplaints
+from source.sentiment_classif.datasets import AirlineComplaints, ImdbReviews
 from source.sentiment_classif.utils import EarlyStopper
 from pathlib import Path
 
@@ -79,8 +79,8 @@ class Trainer:
         self.epochs = epochs
         self.early_stopper = EarlyStopper()
         self.optimizer = AdamW(model.parameters(),
-                               lr=5e-5,  # Default learning rate
-                               eps=1e-8  # Default epsilon value
+                               lr=5e-5,
+                               eps=1e-8
                                )
         self.steps = len(dataset) * epochs
         self.scheduler = get_linear_schedule_with_warmup(self.optimizer,
@@ -181,7 +181,7 @@ class Trainer:
 
     def save(self, path):
         model_path = Path('models_trained')
-        torch.save(self.model.state_dict, model_path/path)
+        torch.save(self.model.state_dict(), model_path/path)
 
 
 # ========================================================================
@@ -194,6 +194,33 @@ def main():
     else:
         print('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
+
+    model = BertClassifier()
+    dataset = ImdbReviews(model.tokenizer)
+    trainer = Trainer(model, dataset, device=device)
+    try:
+        trainer.train(evaluation=True)
+    except KeyboardInterrupt:
+        pass
+    trainer.save('bert_imdb')
+
+    model = BertClassifier()
+    dataset = AirlineComplaints(model.tokenizer)
+    trainer = Trainer(model, dataset, device=device)
+    try:
+        trainer.train(evaluation=True)
+    except KeyboardInterrupt:
+        pass
+    trainer.save('bert_airline')
+
+    model = Data2VecClassifier()
+    dataset = ImdbReviews(model.tokenizer)
+    trainer = Trainer(model, dataset, device=device)
+    try:
+        trainer.train(evaluation=True)
+    except KeyboardInterrupt:
+        pass
+    trainer.save('d2vec_imdb')
 
     model = Data2VecClassifier()
     dataset = AirlineComplaints(model.tokenizer)
