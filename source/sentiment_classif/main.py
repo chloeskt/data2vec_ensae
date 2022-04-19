@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from transformers import AdamW, get_linear_schedule_with_warmup
 from source.sentiment_classif.datasets import AirlineComplaints
 from source.sentiment_classif.utils import EarlyStopper
+from pathlib import Path
 
 # ========================================================================
 
@@ -127,7 +128,8 @@ class Trainer:
                         f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {val_loss:^10.6f} | {val_accuracy:^9.2f} | {time_elapsed:^9.2f}")
                     self.early_stopper(val_loss)
                     if self.early_stopper.early_stop:
-                        break
+                        print("Training complete!")
+                        return (0)
                     batch_loss, batch_counts = 0, 0
                     t0_batch = time.time()
 
@@ -177,6 +179,11 @@ class Trainer:
         all_logits = torch.cat(all_logits, dim=0)
         self.probs = F.softmax(all_logits, dim=1).cpu().numpy()
 
+    def save(self, path):
+        model_path = Path('models_trained')
+        torch.save(self.model.state_dict, model_path/path)
+
+
 # ========================================================================
 
 
@@ -191,5 +198,8 @@ def main():
     model = Data2VecClassifier()
     dataset = AirlineComplaints(model.tokenizer)
     trainer = Trainer(model, dataset, device=device)
-    trainer.train(evaluation=True)
-    torch.save(model.state_dict(), 'new_d2_airline')
+    try:
+        trainer.train(evaluation=True)
+    except KeyboardInterrupt:
+        pass
+    trainer.save('d2vec_airline')
