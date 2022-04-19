@@ -97,7 +97,8 @@ class AirlineComplaints(Dataset_):
         self.val_labels = torch.tensor(self.y_val)
         self.batch_size = batch_size
         self.max_len = max_len
-        self.X_test = self.test.tweet
+        self.X_test = self.test.review
+        self.y_test = self.test.sentiment.apply(lambda x : 0 if x == 'negative' else 1)
 
     def download(self):
         print("Downloading ...")
@@ -118,8 +119,7 @@ class AirlineComplaints(Dataset_):
         non_complaints['label'] = 1
         self.data = pd.concat([complaints, non_complaints], axis=0).reset_index(drop=True)
         self.data = self.data.drop(['airline'], axis=1)
-        self.test = pd.read_csv('data/test_data.csv')
-        self.test = self.test[['id', 'tweet']]
+        self.test = pd.read_csv('airline_test.csv')
 
     def preprocessing(self, text):
         text = re.sub(r'(@.*?)[\s]', ' ', text)  # Remove mentions
@@ -234,10 +234,10 @@ class Trainer:
         self.set_seed()
         self.loss_fn = nn.CrossEntropyLoss()
         self.model = model
-        self.model.to(device)
+        self.device = device
+        self.model.to(self.device)
         self.dataset = dataset
         self.epochs = epochs
-        self.device = device
         self.optimizer = AdamW(model.parameters(),
                                lr=5e-5,  # Default learning rate
                                eps=1e-8  # Default epsilon value
@@ -320,34 +320,12 @@ class Trainer:
 
         all_logits = []
         for batch in self.test_dataloader:
-            b_input_ids, b_attn_mask = tuple(t.to(device) for t in batch)[:2]
+            b_input_ids, b_attn_mask = tuple(t.to(self.device) for t in batch)[:2]
             with torch.no_grad():
                 logits = self.model(b_input_ids, b_attn_mask)
             all_logits.append(logits)
         all_logits = torch.cat(all_logits, dim=0)
         self.probs = F.softmax(all_logits, dim=1).cpu().numpy()
-
-    def evaluate_roc(self):
-        preds = self.probs[:, 1]
-        fpr, tpr, threshold = roc_curve(self.dataset.y_val, preds)
-        roc_auc = auc(fpr, tpr)
-        print(f'AUC: {roc_auc:.4f}')
-
-        # Get accuracy over the test set
-        y_pred = np.where(preds >= 0.5, 1, 0)
-        accuracy = accuracy_score(self.dataset.y_val, y_pred)
-        print(f'Accuracy: {accuracy * 100:.2f}%')
-
-        # Plot ROC AUC
-        plt.title('Receiver Operating Characteristic')
-        plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
-        plt.legend(loc='lower right')
-        plt.plot([0, 1], [0, 1], 'r--')
-        plt.xlim([0, 1])
-        plt.ylim([0, 1])
-        plt.ylabel('True Positive Rate')
-        plt.xlabel('False Positive Rate')
-        plt.show()
 
 # ========================================================================
 
@@ -359,8 +337,9 @@ def main():
         print('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
 
-    dataset = AirlineComplaints()
-    model = Data2VecClassifier()
+    dataset = ImdbReviews()
+    model = BertClassifier()
     dataset.tokenize_all(model.tokenizer)
     trainer = Trainer(model, dataset, device=device)
     trainer.train(evaluation=True)
+    torch.save(model.state_dict(), 'bert_imdb')
