@@ -1,5 +1,6 @@
 from typing import Any
 
+import torch
 import torch.nn as nn
 from transformers import PretrainedConfig
 
@@ -16,15 +17,15 @@ class Model(nn.Module):
 
     def forward(
         self,
-        input_ids=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
+        input_ids: torch.Tensor = None,
+        attention_mask: torch.Tensor = None,
+        token_type_ids: torch.Tensor = None,
+        position_ids: torch.Tensor = None,
+        head_mask: torch.Tensor = None,
+        inputs_embeds: torch.Tensor = None,
+        output_attentions: torch.Tensor = None,
+        output_hidden_states: torch.Tensor = None,
+        return_dict: bool = None,
     ):
         outputs = self.model(
             input_ids,

@@ -41,7 +41,7 @@ After creating for virtual environment, please refer to each folder ``README.md`
 
 In the end due to time and hardware/compute constraints, we considered two mains tasks:
 - question answering (F1 score \& Exact match)
-- sentiment analysis ()
+- sentiment analysis (Accuracy)
 
 For more information, please refer to the corresponding `README.md` (in `source/question_answering` and `source/sentiment_classif`).
 
@@ -60,5 +60,5 @@ dl_ensae
 
 For each task we developed colab notebooks that can be viewed in parallel to the source code:
 
-- [Question Answering notebook](https://colab.research.google.com/drive/1qzDdyZ6qsNxdSMyxlCIuKqjB7FdPDw3Y?usp=sharing)
-- [Sentiment Classification notebook]()
+- <a href="https://colab.research.google.com/drive/1qzDdyZ6qsNxdSMyxlCIuKqjB7FdPDw3Y?usp=sharing" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> for Question Answering
+- ...
