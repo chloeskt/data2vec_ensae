@@ -1,10 +1,11 @@
 from pathlib import Path
 import gdown
 import os
-D2VEC_IMDB = ''
+D2VEC_IMDB = '1aR2Aq-MXMiEA7JBzBJQ65W3l-OXt4nD5'
 D2VEC_AIRLINE = ''
-BERT_IMDB = ''
-BERT_AIRLINE = ''
+BERT_IMDB = '1DHxPf31Q_ezYSmsVokPXjkhk_b69a1z8'
+BERT_AIRLINE = '1rPISyDucv9_QXBRJOGKmfsPbG3ve5P5s'
+
 
 
 def download_from_drive(file_id, data_dir, filename):
