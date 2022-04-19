@@ -41,7 +41,7 @@ After creating for virtual environment, please refer to each folder ``README.md`
 
 In the end due to time and hardware/compute constraints, we considered two mains tasks:
 - question answering (F1 score \& Exact match)
-- sentiment analysis (Accuracy)
+- sentiment analysis (Matthew Correlation Coefficient)
 
 For more information, please refer to the corresponding `README.md` (in `source/question_answering` and `source/sentiment_classif`).
 
