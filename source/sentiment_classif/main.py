@@ -173,15 +173,20 @@ class Trainer:
     def predict(self):
         self.model.eval()
 
-        all_logits = []
+        predictions, true_labels = [], []
+
         for batch in self.test_dataloader:
-            b_input_ids, b_attn_mask = tuple(
-                t.to(self.device) for t in batch)[:2]
+            batch = tuple(t.to(self.device) for t in batch)
+            b_input_ids, b_input_mask, b_labels = batch
             with torch.no_grad():
-                logits = self.model(b_input_ids, b_attn_mask)
-            all_logits.append(logits)
-        all_logits = torch.cat(all_logits, dim=0)
-        self.probs = F.softmax(all_logits, dim=1).cpu().numpy()
+                outputs = self.model(b_input_ids, token_type_ids=None,
+                                     attention_mask=b_input_mask)
+            logits = outputs[0]
+            logits = logits.detach().cpu().numpy()
+            label_ids = b_labels.to('cpu').numpy()
+            predictions.append(logits)
+            true_labels.append(label_ids)
+        return predictions, true_labels
 
     def save(self, path):
         model_path = Path('models_trained')
