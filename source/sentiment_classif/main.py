@@ -1,192 +1,25 @@
 import torch
-import pandas as pd
 import numpy as np
-import re
-import requests, zipfile
-from sklearn.model_selection import train_test_split
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-import torch
 import torch.nn as nn
 from transformers import RobertaTokenizer, Data2VecTextModel, BertTokenizer, BertModel
 import random
 import time
 import torch.nn.functional as F
 from transformers import AdamW, get_linear_schedule_with_warmup
-from sklearn.metrics import accuracy_score, roc_curve, auc
-import matplotlib.pyplot as plt
-
-class Dataset_:
-    def __init__(self):
-        self.data = pd.DataFrame()
-        self.test = pd.DataFrame()
-
-    def download(self):
-        pass
-
-    def unzip(self):
-        pass
-
-    def format(self):
-        pass
-
-    def preprocessing(self, text):
-        pass
-
-    def sample(self):
-        self.data.sample(5)
-
-    def sample_test(self):
-        self.test.sample(5)
-
-    def __len__(self):
-        return len(self.data)
-
-    def tokenization(self, data, tokenizer):
-        input_ids = []
-        attention_masks = []
-
-        for sent in data:
-            encoded_sent = tokenizer.encode_plus(
-                text=self.preprocessing(sent),  # Preprocess sentence
-                add_special_tokens=True,  # Add `[CLS]` and `[SEP]`
-                max_length=self.max_len,  # Max length to truncate/pad
-                pad_to_max_length=True,  # Pad sentence to max length
-                return_attention_mask=True  # Return attention mask
-            )
-
-            input_ids.append(encoded_sent.get('input_ids'))
-            attention_masks.append(encoded_sent.get('attention_mask'))
-
-        input_ids = torch.tensor(input_ids)
-        attention_masks = torch.tensor(attention_masks)
-
-        return input_ids, attention_masks
-
-    def tokenize_all(self, tokenizer):
-        print("Tokenizing")
-        train_inputs, train_masks = self.tokenization(self.X_train, tokenizer)
-        val_inputs, val_masks = self.tokenization(self.X_val, tokenizer)
-        test_inputs, test_masks = self.tokenization(self.X_test, tokenizer)
-        self.train_data = TensorDataset(train_inputs, train_masks, self.train_labels)
-        self.train_sampler = RandomSampler(self.train_data)
-        self.train_dataloader = DataLoader(self.train_data, sampler=self.train_sampler, batch_size=self.batch_size)
-        self.val_data = TensorDataset(val_inputs, val_masks, self.val_labels)
-        self.val_sampler = SequentialSampler(self.val_data)
-        self.val_dataloader = DataLoader(self.val_data, sampler=self.val_sampler, batch_size=self.batch_size)
-        self.test_data = TensorDataset(test_inputs, test_masks)
-        self.test_sampler = SequentialSampler(self.test_data)
-        self.test_dataloader = DataLoader(self.test_data, sampler=self.test_sampler, batch_size=self.batch_size)
-
-    def get_max_len(self, tokenizer):
-        all_data = np.concatenate([self.X, self.X_test.values])
-        encoded_data = [tokenizer.encode(sent, add_special_tokens=True) for sent in all_data]
-        max_len = max([len(sent) for sent in encoded_data])
-        return (max_len)
-
-class AirlineComplaints(Dataset_):
-    def __init__(self, test_size=0.1, batch_size=32, max_len=175):
-        self.url = 'https://drive.google.com/uc?export=download&id=1wHt8PsMLsfX5yNSqrt2fSTcb8LEiclcf'
-        self.download()
-        self.unzip()
-        self.format()
-        self.X = self.data.tweet.values
-        self.y = self.data.label.values
-        self.X_train, self.X_val, self.y_train, self.y_val = \
-            train_test_split(self.X, self.y, test_size=test_size, random_state=42)
-        self.train_labels = torch.tensor(self.y_train)
-        self.val_labels = torch.tensor(self.y_val)
-        self.batch_size = batch_size
-        self.max_len = max_len
-        self.X_test = self.test.review
-        self.y_test = self.test.sentiment.apply(lambda x : 0 if x == 'negative' else 1)
-
-    def download(self):
-        print("Downloading ...")
-        data = requests.get(self.url)
-        with open('data.zip', 'wb') as f:
-            f.write(data.content)
-
-    def unzip(self):
-        print("Extracting ...")
-        with zipfile.ZipFile('data.zip') as z:
-            z.extractall('data')
-
-    def format(self):
-        print("Formatting data ...")
-        complaints = pd.read_csv('data/complaint1700.csv')
-        non_complaints = pd.read_csv('data/noncomplaint1700.csv')
-        complaints['label'] = 0
-        non_complaints['label'] = 1
-        self.data = pd.concat([complaints, non_complaints], axis=0).reset_index(drop=True)
-        self.data = self.data.drop(['airline'], axis=1)
-        self.test = pd.read_csv('airline_test.csv')
-
-    def preprocessing(self, text):
-        text = re.sub(r'(@.*?)[\s]', ' ', text)  # Remove mentions
-        text = re.sub(r'&amp;', '&', text)
-        text = re.sub(r'\s+', ' ', text).strip()  # Remove trailing whitespaces
-        return (text)
-
-    def sample(self):
-        self.data.sample(5)
-
-    def sample_test(self):
-        self.test.sample(5)
-
-    def __len__(self):
-        return len(self.data)
-
-    def tokenization(self, data, tokenizer):
-        input_ids = []
-        attention_masks = []
-
-        for sent in data:
-            encoded_sent = tokenizer.encode_plus(
-                text=self.preprocessing(sent),  # Preprocess sentence
-                add_special_tokens=True,  # Add `[CLS]` and `[SEP]`
-                max_length=self.max_len,  # Max length to truncate/pad
-                pad_to_max_length=True,  # Pad sentence to max length
-                return_attention_mask=True  # Return attention mask
-            )
-
-            input_ids.append(encoded_sent.get('input_ids'))
-            attention_masks.append(encoded_sent.get('attention_mask'))
-
-        input_ids = torch.tensor(input_ids)
-        attention_masks = torch.tensor(attention_masks)
-
-        return input_ids, attention_masks
-
-    def tokenize_all(self, tokenizer):
-        print("Tokenizing")
-        train_inputs, train_masks = self.tokenization(self.X_train, tokenizer)
-        val_inputs, val_masks = self.tokenization(self.X_val, tokenizer)
-        test_inputs, test_masks = self.tokenization(self.X_test, tokenizer)
-        self.train_data = TensorDataset(train_inputs, train_masks, self.train_labels)
-        self.train_sampler = RandomSampler(self.train_data)
-        self.train_dataloader = DataLoader(self.train_data, sampler=self.train_sampler, batch_size=self.batch_size)
-        self.val_data = TensorDataset(val_inputs, val_masks, self.val_labels)
-        self.val_sampler = SequentialSampler(self.val_data)
-        self.val_dataloader = DataLoader(self.val_data, sampler=self.val_sampler, batch_size=self.batch_size)
-        self.test_data = TensorDataset(test_inputs, test_masks)
-        self.test_sampler = SequentialSampler(self.test_data)
-        self.test_dataloader = DataLoader(self.test_data, sampler=self.test_sampler, batch_size=self.batch_size)
-
-    def get_max_len(self, tokenizer):
-        all_tweets = np.concatenate([self.X, self.X_test.values])
-        encoded_tweets = [tokenizer.encode(sent, add_special_tokens=True) for sent in all_tweets]
-        max_len = max([len(sent) for sent in encoded_tweets])
-        return (max_len)
+from source.sentiment_classif.datasets import AirlineComplaints
 
 # ========================================================================
+
 
 class Data2VecClassifier(nn.Module):
     def __init__(self):
         super(Data2VecClassifier, self).__init__()
         D_in, H, D_out = 768, 50, 2
 
-        self.tokenizer = RobertaTokenizer.from_pretrained('facebook/data2vec-text-base')
-        self.model = Data2VecTextModel.from_pretrained('facebook/data2vec-text-base')
+        self.tokenizer = RobertaTokenizer.from_pretrained(
+            'facebook/data2vec-text-base')
+        self.model = Data2VecTextModel.from_pretrained(
+            'facebook/data2vec-text-base')
 
         # Instantiate an one-layer feed-forward classifier
         self.classifier = nn.Sequential(
@@ -205,13 +38,15 @@ class Data2VecClassifier(nn.Module):
 
 # ========================================================================
 
+
 class BertClassifier(nn.Module):
 
     def __init__(self):
         super(BertClassifier, self).__init__()
         D_in, H, D_out = 768, 50, 2
 
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        self.tokenizer = BertTokenizer.from_pretrained(
+            'bert-base-uncased', do_lower_case=True)
         self.bert = BertModel.from_pretrained('bert-base-uncased')
         self.classifier = nn.Sequential(
             nn.Linear(D_in, H),
@@ -219,6 +54,7 @@ class BertClassifier(nn.Module):
             # nn.Dropout(0.5),
             nn.Linear(H, D_out)
         )
+
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids,
                             attention_mask=attention_mask)
@@ -227,6 +63,7 @@ class BertClassifier(nn.Module):
         return logits
 
 # ========================================================================
+
 
 class Trainer:
     # Specify loss function
@@ -259,14 +96,16 @@ class Trainer:
     def train(self, evaluation=False):
         print("Start training...\n")
         for epoch_i in range(self.epochs):
-            print(f"{'Epoch':^7} | {'Batch':^7} | {'Train Loss':^12} | {'Val Loss':^10} | {'Val Acc':^9} | {'Elapsed':^9}")
+            print(
+                f"{'Epoch':^7} | {'Batch':^7} | {'Train Loss':^12} | {'Val Loss':^10} | {'Val Acc':^9} | {'Elapsed':^9}")
             print("-" * 70)
             t0_epoch, t0_batch = time.time(), time.time()
             total_loss, batch_loss, batch_counts = 0, 0, 0
             self.model.train()
             for step, batch in enumerate(self.train_dataloader):
                 batch_counts += 1
-                b_input_ids, b_attn_mask, b_labels = tuple(t.to(self.device) for t in batch)
+                b_input_ids, b_attn_mask, b_labels = tuple(
+                    t.to(self.device) for t in batch)
                 self.model.zero_grad()
                 logits = self.model(b_input_ids, b_attn_mask)
                 loss = self.loss_fn(logits, b_labels)
@@ -279,7 +118,8 @@ class Trainer:
 
                 if (step % 20 == 0 and step != 0) or (step == len(self.train_dataloader) - 1):
                     time_elapsed = time.time() - t0_batch
-                    print(f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {'-':^10} | {'-':^9} | {time_elapsed:^9.2f}")
+                    print(
+                        f"{epoch_i + 1:^7} | {step:^7} | {batch_loss / batch_counts:^12.6f} | {'-':^10} | {'-':^9} | {time_elapsed:^9.2f}")
 
                     batch_loss, batch_counts = 0, 0
                     t0_batch = time.time()
@@ -290,7 +130,8 @@ class Trainer:
             if evaluation == True:
                 val_loss, val_accuracy = self.evaluate()
                 time_elapsed = time.time() - t0_epoch
-                print(f"{epoch_i + 1:^7} | {'-':^7} | {avg_train_loss:^12.6f} | {val_loss:^10.6f} | {val_accuracy:^9.2f} | {time_elapsed:^9.2f}")
+                print(
+                    f"{epoch_i + 1:^7} | {'-':^7} | {avg_train_loss:^12.6f} | {val_loss:^10.6f} | {val_accuracy:^9.2f} | {time_elapsed:^9.2f}")
                 print("-" * 70)
             print("\n")
 
@@ -303,7 +144,8 @@ class Trainer:
         val_loss = []
 
         for batch in self.val_dataloader:
-            b_input_ids, b_attn_mask, b_labels = tuple(t.to(self.device) for t in batch)
+            b_input_ids, b_attn_mask, b_labels = tuple(
+                t.to(self.device) for t in batch)
             with torch.no_grad():
                 logits = self.model(b_input_ids, b_attn_mask)
             loss = self.loss_fn(logits, b_labels)
@@ -320,7 +162,8 @@ class Trainer:
 
         all_logits = []
         for batch in self.test_dataloader:
-            b_input_ids, b_attn_mask = tuple(t.to(self.device) for t in batch)[:2]
+            b_input_ids, b_attn_mask = tuple(
+                t.to(self.device) for t in batch)[:2]
             with torch.no_grad():
                 logits = self.model(b_input_ids, b_attn_mask)
             all_logits.append(logits)
@@ -328,6 +171,7 @@ class Trainer:
         self.probs = F.softmax(all_logits, dim=1).cpu().numpy()
 
 # ========================================================================
+
 
 def main():
     if torch.cuda.is_available():
@@ -337,9 +181,8 @@ def main():
         print('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
 
-    dataset = ImdbReviews()
-    model = BertClassifier()
-    dataset.tokenize_all(model.tokenizer)
+    model = Data2VecClassifier()
+    dataset = AirlineComplaints(model.tokenizer)
     trainer = Trainer(model, dataset, device=device)
     trainer.train(evaluation=True)
-    torch.save(model.state_dict(), 'bert_imdb')
+    torch.save(model.state_dict(), 'new_d2_airline')
