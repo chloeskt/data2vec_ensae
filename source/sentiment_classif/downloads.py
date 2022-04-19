@@ -19,7 +19,7 @@ def download_from_drive(file_id, data_dir, filename):
     if not path.is_file():
         print("Downloading ...")
         with open(path, 'wb') as f:
-            gdown.download(url, f, quiet=False)
+            gdown.download(url, f, quiet=False, fuzzy=True)
 
 
 def get_weights():

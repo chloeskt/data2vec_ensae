@@ -52,7 +52,7 @@ class SentimentDataset:
         if not self.path.is_file():
             print("Downloading ...")
             with open(self.path, 'wb') as f:
-                gdown.download(self.url, f, quiet=False)
+                gdown.download(self.url, f, quiet=False, fuzzy=True)
         else:
             print('Dataset already downloaded')
 
