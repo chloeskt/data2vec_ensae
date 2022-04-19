@@ -179,7 +179,7 @@ class Trainer:
             batch = tuple(t.to(self.device) for t in batch)
             b_input_ids, b_input_mask, b_labels = batch
             with torch.no_grad():
-                outputs = self.model(b_input_ids, token_type_ids=None,
+                outputs = self.model(b_input_ids, 
                                      attention_mask=b_input_mask)
             logits = outputs[0]
             logits = logits.detach().cpu().numpy()
