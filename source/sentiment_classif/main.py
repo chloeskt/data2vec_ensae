@@ -181,7 +181,6 @@ class Trainer:
             with torch.no_grad():
                 outputs = self.model(b_input_ids,
                                      attention_mask=b_input_mask)
-            print(outputs)
             logits = outputs
             logits = logits.detach().cpu().numpy()
             label_ids = b_labels.to('cpu').numpy()
