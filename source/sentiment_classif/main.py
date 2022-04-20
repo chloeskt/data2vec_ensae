@@ -179,9 +179,10 @@ class Trainer:
             batch = tuple(t.to(self.device) for t in batch)
             b_input_ids, b_input_mask, b_labels = batch
             with torch.no_grad():
-                outputs = self.model(b_input_ids, 
+                outputs = self.model(b_input_ids,
                                      attention_mask=b_input_mask)
-            logits = outputs[0]
+            print(outputs)
+            logits = outputs
             logits = logits.detach().cpu().numpy()
             label_ids = b_labels.to('cpu').numpy()
             predictions.append(logits)

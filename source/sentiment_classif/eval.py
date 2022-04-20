@@ -79,12 +79,10 @@ def get_matthew_corr(predictions, true_labels):
 
 
 def main():
-    model = Data2VecClassifier()
-    tokenizer = model.tokenizer
-    dataset = ImdbReviews(tokenizer)
     path = Path('models_trained')/'d2vec_imdb'
-    load_model(model, path)
-    results = eval_model(model, dataset)
-    save_path = Path('predicts')/"d2vec_imdb.csv"
-    print(save_path)
-    np.savetxt(save_path, results, delimiter=",")
+    model = Data2VecClassifier(weights=torch.load(path))
+    dataset = ImdbReviews(model.tokenizer)
+    trainer = Trainer(model, dataset, device=torch.device('cpu'))
+    preds, labels = trainer.predict()
+    mcc = get_matthew_corr(preds, labels)
+    print(mcc)
