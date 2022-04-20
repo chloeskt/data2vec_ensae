@@ -48,8 +48,8 @@ For more information, please refer to the corresponding `README.md` (in `source/
 ```
 dl_ensae
 ├── .gitignore                  
-├── Project_proposal            # Our project proposal
-├── Final_report                # Our final report
+├── PROJECT_PROPOSAL            # Our project proposal
+├── REPORT                      # Our final report
 ├── source                      # Source code main package   
     ├── question_answering/     # Question answering related source code                         
     └── sentiment_classif/      # Sentiment classification related source code  
