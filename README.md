@@ -7,6 +7,8 @@ It has been developed by FAIR quite recently and has shown promising results in 
 goal will be to study its performance on several tasks in NLP and compare it to the best single-purpose algorithms in 
 this domain. 
 
+Final grade: 20/20
+
 # Motivation and goals
 
 Self-supervised learning is motivated by the goal of making use of large amount of unlabeled data and uncover their 
